@@ -15,7 +15,7 @@ const QUICK_ACTIONS = [
   { type: 'scene' as const, entityId: 'scene.evening' as EntityName, label: 'Evening', icon: 'mdi:weather-night' },
   { type: 'scene' as const, entityId: 'scene.morning' as EntityName, label: 'Morning', icon: 'mdi:weather-sunny' },
   { type: 'script' as const, entityId: 'script.all_off' as EntityName, label: 'All Off', icon: 'mdi:power' },
-  { type: 'script' as const, entityId: 'script.movie_mode' as EntityName, label: 'Movie Mode', icon: 'mdi:movie' }
+  { type: 'script' as const, entityId: 'script.film_mys' as EntityName, label: 'Movie Mode', icon: 'mdi:movie' }
 ];
 
 function Dashboard() {

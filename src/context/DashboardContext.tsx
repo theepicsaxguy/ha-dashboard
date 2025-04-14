@@ -218,7 +218,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         id: `alert-${alertId}`,
         priority: 'critical',
         type: 'alert',
-        data: { alertId },
+        data: { entityId: alertId },
       });
     });
 
@@ -238,7 +238,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         id: `media-${playerId}`,
         priority: 'medium',
         type: 'media',
-        data: { playerId },
+        data: { entityId: playerId },
       });
     });
 
