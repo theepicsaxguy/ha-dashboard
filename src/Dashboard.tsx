@@ -84,8 +84,9 @@ function Dashboard() {
 
         {/* Dynamic Content */}
         <AnimatePresence mode="sync">
-          {prioritizedContent.map((contentItem: PrioritizedContent) => {
-            const key = contentItem.id;
+          {prioritizedContent.map((contentItem: PrioritizedContent, index) => {
+            // Use contentItem.id if present and non-empty; otherwise, fall back to a string based on the index
+            const key = contentItem.id && contentItem.id.trim() ? contentItem.id : `content-${index}`;
             
             switch (contentItem.type) {
               case 'alert':
