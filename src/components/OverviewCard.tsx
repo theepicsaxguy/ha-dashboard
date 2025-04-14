@@ -99,7 +99,8 @@ const OverviewCard = () => {
                 <AnimatePresence>
                   {lightsOn.map((light) => {
                     const areaId = entityAreaMap[light.entity_id as EntityName];
-                    const areaName = areaId && areas[areaId] ? areas[areaId].name : null;
+                    const area = areaId ? areas.find(area => area.area_id === areaId) : null;
+                    const areaName = area ? area.name : null;
                     const title = `${light.attributes?.friendly_name || light.entity_id.split('.')[1]}${areaName ? ` (${areaName})` : ''}`;
                     
                     return (
@@ -159,7 +160,8 @@ const OverviewCard = () => {
                 <AnimatePresence>
                   {activePlayers.map((player) => {
                     const areaId = entityAreaMap[player.entity_id as EntityName];
-                    const areaName = areaId && areas[areaId] ? areas[areaId].name : null;
+                    const area = areaId ? areas.find(area => area.area_id === areaId) : null;
+                    const areaName = area ? area.name : null;
                     const mediaInfo = [
                       player.attributes?.media_title || player.attributes?.app_name || 'Unknown Media',
                       player.attributes?.media_artist,

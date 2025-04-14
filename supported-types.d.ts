@@ -5,6 +5,32 @@ declare module "@hakit/core" {
   export interface CustomSupportedServices<
     T extends ServiceFunctionTypes = "target",
   > {
+    persistentNotification: {
+      // Shows a notification on the notifications panel.
+      create: ServiceFunction<
+        object,
+        T,
+        {
+          // Message body of the notification. @example Please check your configuration.yaml.
+          message: string;
+          // Optional title of the notification. @example Test notification
+          title?: string;
+          // ID of the notification. This new notification will overwrite an existing notification with the same ID. @example 1234
+          notification_id?: string;
+        }
+      >;
+      // Deletes a notification from the notifications panel.
+      dismiss: ServiceFunction<
+        object,
+        T,
+        {
+          // ID of the notification to be deleted. @example 1234
+          notification_id: string;
+        }
+      >;
+      // Deletes all notifications from the notifications panel.
+      dismissAll: ServiceFunction<object, T, object>;
+    };
     homeassistant: {
       // Saves the persistent states immediately. Maintains the normal periodic saving interval.
       savePersistentStates: ServiceFunction<object, T, object>;
@@ -466,32 +492,6 @@ declare module "@hakit/core" {
         }
       >;
     };
-    persistentNotification: {
-      // Shows a notification on the notifications panel.
-      create: ServiceFunction<
-        object,
-        T,
-        {
-          // Message body of the notification. @example Please check your configuration.yaml.
-          message: string;
-          // Optional title of the notification. @example Test notification
-          title?: string;
-          // ID of the notification. This new notification will overwrite an existing notification with the same ID. @example 1234
-          notification_id?: string;
-        }
-      >;
-      // Deletes a notification from the notifications panel.
-      dismiss: ServiceFunction<
-        object,
-        T,
-        {
-          // ID of the notification to be deleted. @example 1234
-          notification_id: string;
-        }
-      >;
-      // Deletes all notifications from the notifications panel.
-      dismissAll: ServiceFunction<object, T, object>;
-    };
     systemLog: {
       // Deletes all log entries.
       clear: ServiceFunction<object, T, object>;
@@ -839,78 +839,100 @@ declare module "@hakit/core" {
       // Reloads history stats sensors from the YAML-configuration.
       reload: ServiceFunction<object, T, object>;
     };
-    scene: {
-      // Reloads the scenes from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Activates a scene with configuration.
-      apply: ServiceFunction<
+    conversation: {
+      // Launches a conversation from a transcribed text.
+      process: ServiceFunction<
         object,
         T,
         {
-          // List of entities and their target state. @example light.kitchen: 'on' light.ceiling:   state: 'on'   brightness: 80
-          entities: object;
-          // Time it takes the devices to transition into the states defined in the scene. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
-          transition?: number;
+          // Transcribed text input. @example Turn all lights on
+          text: string;
+          // Language of text. Defaults to server language. @example NL
+          language?: string;
+          // Conversation agent to process your request. The conversation agent is the brains of your assistant. It processes the incoming text commands. @example homeassistant
+          agent_id?: string;
+          // ID of the conversation, to be able to continue a previous conversation @example my_conversation_1
+          conversation_id?: string;
         }
       >;
-      // Creates a new scene.
-      create: ServiceFunction<
+      // Reloads the intent configuration.
+      reload: ServiceFunction<
         object,
         T,
         {
-          // The entity ID of the new scene. @example all_lights
-          scene_id: string;
-          // List of entities and their target state. If your entities are already in the target state right now, use 'Entities snapshot' instead. @example light.tv_back_light: 'on' light.ceiling:   state: 'on'   brightness: 200
-          entities?: object;
-          // List of entities to be included in the snapshot. By taking a snapshot, you record the current state of those entities. If you do not want to use the current state of all your entities for this scene, you can combine 'Entities snapshot' with 'Entity states'. @example - light.ceiling - light.kitchen
-          snapshot_entities?: string;
-        }
-      >;
-      // Deletes a dynamically created scene.
-      delete: ServiceFunction<object, T, object>;
-      // Activates a scene.
-      turnOn: ServiceFunction<
-        object,
-        T,
-        {
-          // Time it takes the devices to transition into the states defined in the scene. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
-          transition?: number;
+          // Language to clear cached intents for. Defaults to server language. @example NL
+          language?: string;
+          // Conversation agent to reload. @example homeassistant
+          agent_id?: string;
         }
       >;
     };
-    group: {
-      // Reloads group configuration, entities, and notify services from YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Creates/Updates a group.
-      set: ServiceFunction<
+    assistSatellite: {
+      // Lets a satellite announce a message.
+      announce: ServiceFunction<
         object,
         T,
         {
-          // Object ID of this group. This object ID is used as part of the entity ID. Entity ID format: [domain].[object_id]. @example test_group
-          object_id: string;
-          // Name of the group. @example My test group
-          name?: string;
-          // Name of the icon for the group. @example mdi:camera
-          icon?: string;
-          // List of all members in the group. Cannot be used in combination with `Add entities` or `Remove entities`. @example domain.entity_id1, domain.entity_id2
-          entities?: string;
-          // List of members to be added to the group. Cannot be used in combination with `Entities` or `Remove entities`. @example domain.entity_id1, domain.entity_id2
-          add_entities?: string;
-          // List of members to be removed from a group. Cannot be used in combination with `Entities` or `Add entities`. @example domain.entity_id1, domain.entity_id2
-          remove_entities?: string;
-          // Enable this option if the group should only be used when all entities are in state `on`.
-          all?: boolean;
+          // The message to announce. @example Time to wake up!
+          message?: string;
+          // The media ID to announce instead of using text-to-speech.
+          media_id?: string;
+          // Play a sound before the announcement.
+          preannounce?: boolean;
+          // Custom media ID to play before the announcement.
+          preannounce_media_id?: string;
         }
       >;
-      // Removes a group.
-      remove: ServiceFunction<
+      // Starts a conversation from a satellite.
+      startConversation: ServiceFunction<
         object,
         T,
         {
-          // Object ID of this group. This object ID is used as part of the entity ID. Entity ID format: [domain].[object_id]. @example test_group
-          object_id: object;
+          // The message to start with. @example You left the lights on in the living room. Turn them off?
+          start_message?: string;
+          // The media ID to start with instead of using text-to-speech.
+          start_media_id?: string;
+          // Provide background information to the AI about the request.
+          extra_system_prompt?: string;
+          // Play a sound before the start message or media.
+          preannounce?: boolean;
+          // Custom media ID to play before the start message or media.
+          preannounce_media_id?: string;
         }
       >;
+    };
+    number: {
+      // Sets the value of a number.
+      setValue: ServiceFunction<
+        object,
+        T,
+        {
+          // The target value to set. @example 42
+          value: string;
+        }
+      >;
+      // Increase a number entity value by a certain amount.
+      increment: ServiceFunction<
+        object,
+        T,
+        {
+          // The amount to increase the number with. If not provided, the step of the number entity will be used.
+          amount?: number;
+        }
+      >;
+      // Set a number entity to its minimum value.
+      min: ServiceFunction<object, T, object>;
+      // Decrease a number entity value by a certain amount.
+      decrement: ServiceFunction<
+        object,
+        T,
+        {
+          // The amount to decrease the number with. If not provided, the step of the number entity will be used.
+          amount?: number;
+        }
+      >;
+      // Set a number entity to its maximum value.
+      max: ServiceFunction<object, T, object>;
     };
     light: {
       // Turns on one or more lights and adjusts their properties, even when they are turned on already.
@@ -1299,6 +1321,122 @@ declare module "@hakit/core" {
         }
       >;
     };
+    scene: {
+      // Reloads the scenes from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Activates a scene with configuration.
+      apply: ServiceFunction<
+        object,
+        T,
+        {
+          // List of entities and their target state. @example light.kitchen: 'on' light.ceiling:   state: 'on'   brightness: 80
+          entities: object;
+          // Time it takes the devices to transition into the states defined in the scene. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
+          transition?: number;
+        }
+      >;
+      // Creates a new scene.
+      create: ServiceFunction<
+        object,
+        T,
+        {
+          // The entity ID of the new scene. @example all_lights
+          scene_id: string;
+          // List of entities and their target state. If your entities are already in the target state right now, use 'Entities snapshot' instead. @example light.tv_back_light: 'on' light.ceiling:   state: 'on'   brightness: 200
+          entities?: object;
+          // List of entities to be included in the snapshot. By taking a snapshot, you record the current state of those entities. If you do not want to use the current state of all your entities for this scene, you can combine 'Entities snapshot' with 'Entity states'. @example - light.ceiling - light.kitchen
+          snapshot_entities?: string;
+        }
+      >;
+      // Deletes a dynamically created scene.
+      delete: ServiceFunction<object, T, object>;
+      // Activates a scene.
+      turnOn: ServiceFunction<
+        object,
+        T,
+        {
+          // Time it takes the devices to transition into the states defined in the scene. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
+          transition?: number;
+        }
+      >;
+    };
+    camera: {
+      // Enables the motion detection.
+      enableMotionDetection: ServiceFunction<object, T, object>;
+      // Disables the motion detection.
+      disableMotionDetection: ServiceFunction<object, T, object>;
+      // Turns off the camera.
+      turnOff: ServiceFunction<object, T, object>;
+      // Turns on the camera.
+      turnOn: ServiceFunction<object, T, object>;
+      // Takes a snapshot from a camera.
+      snapshot: ServiceFunction<
+        object,
+        T,
+        {
+          // Full path to filename. @example /tmp/snapshot_{{ entity_id.name }}.jpg
+          filename: string;
+        }
+      >;
+      // Plays the camera stream on a supported media player.
+      playStream: ServiceFunction<
+        object,
+        T,
+        {
+          // Media players to stream to.
+          media_player: string;
+          // Stream format supported by the media player.
+          format?: "hls";
+        }
+      >;
+      // Creates a recording of a live camera feed.
+      record: ServiceFunction<
+        object,
+        T,
+        {
+          // Full path to filename. Must be mp4. @example /tmp/snapshot_{{ entity_id.name }}.mp4
+          filename: string;
+          // Planned duration of the recording. The actual duration may vary. @constraints  number: min: 1, max: 3600, unit_of_measurement: seconds
+          duration?: number;
+          // Planned lookback period to include in the recording (in addition to the duration). Only available if there is currently an active HLS stream. The actual length of the lookback period may vary. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
+          lookback?: number;
+        }
+      >;
+    };
+    group: {
+      // Reloads group configuration, entities, and notify services from YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Creates/Updates a group.
+      set: ServiceFunction<
+        object,
+        T,
+        {
+          // Object ID of this group. This object ID is used as part of the entity ID. Entity ID format: [domain].[object_id]. @example test_group
+          object_id: string;
+          // Name of the group. @example My test group
+          name?: string;
+          // Name of the icon for the group. @example mdi:camera
+          icon?: string;
+          // List of all members in the group. Cannot be used in combination with `Add entities` or `Remove entities`. @example domain.entity_id1, domain.entity_id2
+          entities?: string;
+          // List of members to be added to the group. Cannot be used in combination with `Entities` or `Remove entities`. @example domain.entity_id1, domain.entity_id2
+          add_entities?: string;
+          // List of members to be removed from a group. Cannot be used in combination with `Entities` or `Add entities`. @example domain.entity_id1, domain.entity_id2
+          remove_entities?: string;
+          // Enable this option if the group should only be used when all entities are in state `on`.
+          all?: boolean;
+        }
+      >;
+      // Removes a group.
+      remove: ServiceFunction<
+        object,
+        T,
+        {
+          // Object ID of this group. This object ID is used as part of the entity ID. Entity ID format: [domain].[object_id]. @example test_group
+          object_id: object;
+        }
+      >;
+    };
     mediaPlayer: {
       // Turns on the power of the media player.
       turnOn: ServiceFunction<object, T, object>;
@@ -1450,21 +1588,6 @@ declare module "@hakit/core" {
           data?: object;
         }
       >;
-      // Sends a notification message using the wilma_phone service.
-      wilmaPhone: ServiceFunction<
-        object,
-        T,
-        {
-          //  @example The garage door has been open for 10 minutes.
-          message: string;
-          //  @example Your Garage Door Friend
-          title?: string;
-          //  @example platform specific
-          target?: object;
-          //  @example platform specific
-          data?: object;
-        }
-      >;
       // Sends a notification message using the benjamin_phone service.
       benjaminPhone: ServiceFunction<
         object,
@@ -1512,6 +1635,36 @@ declare module "@hakit/core" {
       >;
       // Sends a notification message using the std_warning service.
       stdWarning: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example The garage door has been open for 10 minutes.
+          message: string;
+          //  @example Your Garage Door Friend
+          title?: string;
+          //  @example platform specific
+          target?: object;
+          //  @example platform specific
+          data?: object;
+        }
+      >;
+      // Sends a notification message using the wilma_phone service.
+      wilmaPhone: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example The garage door has been open for 10 minutes.
+          message: string;
+          //  @example Your Garage Door Friend
+          title?: string;
+          //  @example platform specific
+          target?: object;
+          //  @example platform specific
+          data?: object;
+        }
+      >;
+      // Sends a notification message using the android_tv service.
+      androidTv: ServiceFunction<
         object,
         T,
         {
@@ -1615,64 +1768,6 @@ declare module "@hakit/core" {
           data?: object;
         }
       >;
-      // Sends a notification message using the android_tv service.
-      androidTv: ServiceFunction<
-        object,
-        T,
-        {
-          //  @example The garage door has been open for 10 minutes.
-          message: string;
-          //  @example Your Garage Door Friend
-          title?: string;
-          //  @example platform specific
-          target?: object;
-          //  @example platform specific
-          data?: object;
-        }
-      >;
-    };
-    camera: {
-      // Enables the motion detection.
-      enableMotionDetection: ServiceFunction<object, T, object>;
-      // Disables the motion detection.
-      disableMotionDetection: ServiceFunction<object, T, object>;
-      // Turns off the camera.
-      turnOff: ServiceFunction<object, T, object>;
-      // Turns on the camera.
-      turnOn: ServiceFunction<object, T, object>;
-      // Takes a snapshot from a camera.
-      snapshot: ServiceFunction<
-        object,
-        T,
-        {
-          // Full path to filename. @example /tmp/snapshot_{{ entity_id.name }}.jpg
-          filename: string;
-        }
-      >;
-      // Plays the camera stream on a supported media player.
-      playStream: ServiceFunction<
-        object,
-        T,
-        {
-          // Media players to stream to.
-          media_player: string;
-          // Stream format supported by the media player.
-          format?: "hls";
-        }
-      >;
-      // Creates a recording of a live camera feed.
-      record: ServiceFunction<
-        object,
-        T,
-        {
-          // Full path to filename. Must be mp4. @example /tmp/snapshot_{{ entity_id.name }}.mp4
-          filename: string;
-          // Planned duration of the recording. The actual duration may vary. @constraints  number: min: 1, max: 3600, unit_of_measurement: seconds
-          duration?: number;
-          // Planned lookback period to include in the recording (in addition to the duration). Only available if there is currently an active HLS stream. The actual length of the lookback period may vary. @constraints  number: min: 0, max: 300, unit_of_measurement: seconds
-          lookback?: number;
-        }
-      >;
     };
     select: {
       // Selects the first option.
@@ -1716,66 +1811,15 @@ declare module "@hakit/core" {
         }
       >;
     };
-    conversation: {
-      // Launches a conversation from a transcribed text.
-      process: ServiceFunction<
-        object,
-        T,
-        {
-          // Transcribed text input. @example Turn all lights on
-          text: string;
-          // Language of text. Defaults to server language. @example NL
-          language?: string;
-          // Conversation agent to process your request. The conversation agent is the brains of your assistant. It processes the incoming text commands. @example homeassistant
-          agent_id?: string;
-          // ID of the conversation, to be able to continue a previous conversation @example my_conversation_1
-          conversation_id?: string;
-        }
-      >;
-      // Reloads the intent configuration.
-      reload: ServiceFunction<
-        object,
-        T,
-        {
-          // Language to clear cached intents for. Defaults to server language. @example NL
-          language?: string;
-          // Conversation agent to reload. @example homeassistant
-          agent_id?: string;
-        }
-      >;
+    inputButton: {
+      // Reloads helpers from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Mimics the physical button press on the device.
+      press: ServiceFunction<object, T, object>;
     };
-    number: {
-      // Sets the value of a number.
-      setValue: ServiceFunction<
-        object,
-        T,
-        {
-          // The target value to set. @example 42
-          value: string;
-        }
-      >;
-      // Increase a number entity value by a certain amount.
-      increment: ServiceFunction<
-        object,
-        T,
-        {
-          // The amount to increase the number with. If not provided, the step of the number entity will be used.
-          amount?: number;
-        }
-      >;
-      // Set a number entity to its minimum value.
-      min: ServiceFunction<object, T, object>;
-      // Decrease a number entity value by a certain amount.
-      decrement: ServiceFunction<
-        object,
-        T,
-        {
-          // The amount to decrease the number with. If not provided, the step of the number entity will be used.
-          amount?: number;
-        }
-      >;
-      // Set a number entity to its maximum value.
-      max: ServiceFunction<object, T, object>;
+    backup: {
+      // Creates a new backup with automatic backup settings.
+      createAutomatic: ServiceFunction<object, T, object>;
     };
     logbook: {
       // Creates a custom entry in the logbook.
@@ -1833,16 +1877,6 @@ declare module "@hakit/core" {
       turnOn: ServiceFunction<object, T, object>;
       // Toggles alert's notifications.
       toggle: ServiceFunction<object, T, object>;
-    };
-    backup: {
-      // Creates a new backup with automatic backup settings.
-      createAutomatic: ServiceFunction<object, T, object>;
-    };
-    inputButton: {
-      // Reloads helpers from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Mimics the physical button press on the device.
-      press: ServiceFunction<object, T, object>;
     };
     zone: {
       // Reloads zones from the YAML-configuration.
@@ -2032,153 +2066,24 @@ declare module "@hakit/core" {
       // Toggles the helper on/off.
       toggle: ServiceFunction<object, T, object>;
     };
-    assistSatellite: {
-      // Lets a satellite announce a message.
-      announce: ServiceFunction<
+    wakeOnLan: {
+      // Sends a 'magic packet' to wake up a device with 'Wake-On-LAN' capabilities.
+      sendMagicPacket: ServiceFunction<
         object,
         T,
         {
-          // The message to announce. @example Time to wake up!
-          message?: string;
-          // The media ID to announce instead of using text-to-speech.
-          media_id?: string;
-          // Play a sound before the announcement.
-          preannounce?: boolean;
-          // Custom media ID to play before the announcement.
-          preannounce_media_id?: string;
-        }
-      >;
-      // Starts a conversation from a satellite.
-      startConversation: ServiceFunction<
-        object,
-        T,
-        {
-          // The message to start with. @example You left the lights on in the living room. Turn them off?
-          start_message?: string;
-          // The media ID to start with instead of using text-to-speech.
-          start_media_id?: string;
-          // Provide background information to the AI about the request.
-          extra_system_prompt?: string;
-          // Play a sound before the start message or media.
-          preannounce?: boolean;
-          // Custom media ID to play before the start message or media.
-          preannounce_media_id?: string;
-        }
-      >;
-    };
-    utilityMeter: {
-      // Resets all counters of a utility meter.
-      reset: ServiceFunction<object, T, object>;
-      // Calibrates a utility meter sensor.
-      calibrate: ServiceFunction<
-        object,
-        T,
-        {
-          // Value to which set the meter. @example 100
-          value: string;
-        }
-      >;
-    };
-    schedule: {
-      // Reloads schedules from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Retrieves the configured time ranges of one or multiple schedules.
-      getSchedule: ServiceFunction<object, T, object>;
-    };
-    shellCommand: {
-      //
-      pushToGit: ServiceFunction<object, T, object>;
-      //
-      pullGit: ServiceFunction<object, T, object>;
-    };
-    calendar: {
-      // Adds a new calendar event.
-      createEvent: ServiceFunction<
-        object,
-        T,
-        {
-          // Defines the short summary or subject for the event. @example Department Party
-          summary: string;
-          // A more complete description of the event than the one provided by the summary. @example Meeting to provide technical review for 'Phoenix' design.
-          description?: string;
-          // The date and time the event should start. @example 2022-03-22 20:00:00
-          start_date_time?: string;
-          // The date and time the event should end. @example 2022-03-22 22:00:00
-          end_date_time?: string;
-          // The date the all-day event should start. @example 2022-03-22
-          start_date?: string;
-          // The date the all-day event should end (exclusive). @example 2022-03-23
-          end_date?: string;
-          // Days or weeks that you want to create the event in. @example {'days': 2} or {'weeks': 2}
-          in?: object;
-          // The location of the event. @example Conference Room - F123, Bldg. 002
-          location?: string;
-        }
-      >;
-      // Retrieves events on a calendar within a time range.
-      getEvents: ServiceFunction<
-        object,
-        T,
-        {
-          // Returns active events after this time (exclusive). When not set, defaults to now. @example 2022-03-22 20:00:00
-          start_date_time?: string;
-          // Returns active events before this time (exclusive). Cannot be used with Duration. @example 2022-03-22 22:00:00
-          end_date_time?: string;
-          // Returns active events from Start time for the specified duration.
-          duration?: {
-            hours?: number;
-            days?: number;
-            minutes?: number;
-            seconds?: number;
-          };
+          // MAC address of the device to wake up. @example aa:bb:cc:dd:ee:ff
+          mac: string;
+          // The IP address of the host to send the magic packet to. Defaults to `255.255.255.255` and is normally not changed. @example 192.168.255.255
+          broadcast_address?: string;
+          // The port to send the magic packet to. Defaults to `9` and is normally not changed. @constraints  number: min: 1, max: 65535, mode: box
+          broadcast_port?: number;
         }
       >;
     };
     intentScript: {
       // Reloads the intent script from the YAML-configuration.
       reload: ServiceFunction<object, T, object>;
-    };
-    openaiConversation: {
-      // Sends a conversational query to ChatGPT including any attached image or PDF files
-      generateContent: ServiceFunction<
-        object,
-        T,
-        {
-          // The config entry to use for this action @constraints  config_entry: integration: openai_conversation
-          config_entry: any;
-          // The prompt to send @example Hello, how can I help you?
-          prompt: string;
-          // List of files to upload @example - /path/to/file1.txt - /path/to/file2.txt
-          filenames?: string;
-        }
-      >;
-      // Turns a prompt into an image
-      generateImage: ServiceFunction<
-        object,
-        T,
-        {
-          // The config entry to use for this action @constraints  config_entry: integration: openai_conversation
-          config_entry: any;
-          // The text to turn into an image @example A photo of a dog
-          prompt: string;
-          // The size of the image to generate @example 1024x1024
-          size?: "1024x1024" | "1024x1792" | "1792x1024";
-          // The quality of the image that will be generated @example standard
-          quality?: "standard" | "hd";
-          // The style of the generated image @example vivid
-          style?: "vivid" | "natural";
-        }
-      >;
-    };
-    multiscrape: {
-      // Reload all rest entities and notify services
-      reload: ServiceFunction<object, T, object>;
-      //
-      getContent: ServiceFunction<object, T, object>;
-      //
-      scrape: ServiceFunction<object, T, object>;
-      // Triggers an update for the multiscrape scraper_noname_0 integration, independent of the update interval.
-      triggerScraperNoname0: ServiceFunction<object, T, object>;
     };
     opnsense: {
       // Closes one or all notices on OPNsense
@@ -2342,61 +2247,15 @@ declare module "@hakit/core" {
         }
       >;
     };
-    nordpool: {
-      // Action that gets the raw hourly price for spesific date from Nordpool
-      hourly: ServiceFunction<
-        object,
-        T,
-        {
-          // What currecy should the prices be returned in @example NOK
-          currency?: object;
-          // For what year, default to currect year @example YYYY-MM-DD
-          date?: object;
-          // Return the prices for what price area @example NO2
-          area?: object;
-        }
-      >;
-      // Action that gets the raw aggrigated yearly prices from Nordpool
-      yearly: ServiceFunction<
-        object,
-        T,
-        {
-          // What currecy should the prices be returned in @example NOK
-          currency?: object;
-          // For what year, default to currect year @example 2024
-          year?: object;
-          // Return the prices for what price area @example NO2
-          area?: object;
-        }
-      >;
-      // Action that gets the raw aggrigated monthly prices from Nordpool
-      monthly: ServiceFunction<
-        object,
-        T,
-        {
-          // What currecy should the prices be returned in @example NOK
-          currency?: object;
-          // For what year, default to currect year @example 2024
-          year?: object;
-          // Return the prices for what price area @example NO2
-          area?: object;
-        }
-      >;
-      // Action that gets the raw aggrigated daily prices from Nordpool
-      daily: ServiceFunction<
-        object,
-        T,
-        {
-          // What currecy should the prices be returned in @example NOK
-          currency?: object;
-          // For what year, default to currect year @example 2024
-          year?: object;
-          // Return the prices for what price area @example NO2
-          area?: object;
-        }
-      >;
-      //
-      weekly: ServiceFunction<object, T, object>;
+    swemail: {
+      // Refreshes all data outside of normal times
+      fetchData: ServiceFunction<object, T, object>;
+    };
+    schedule: {
+      // Reloads schedules from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Retrieves the configured time ranges of one or multiple schedules.
+      getSchedule: ServiceFunction<object, T, object>;
     };
     counter: {
       // Increments a counter by its step size.
@@ -2415,75 +2274,46 @@ declare module "@hakit/core" {
         }
       >;
     };
-    commandLine: {
-      // Reloads command line configuration from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-    };
-    swemail: {
-      // Refreshes all data outside of normal times
-      fetchData: ServiceFunction<object, T, object>;
-    };
-    inputText: {
-      // Reloads helpers from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Sets the value.
-      setValue: ServiceFunction<
+    calendar: {
+      // Adds a new calendar event.
+      createEvent: ServiceFunction<
         object,
         T,
         {
-          // The target value. @example This is an example text
-          value: string;
+          // Defines the short summary or subject for the event. @example Department Party
+          summary: string;
+          // A more complete description of the event than the one provided by the summary. @example Meeting to provide technical review for 'Phoenix' design.
+          description?: string;
+          // The date and time the event should start. @example 2022-03-22 20:00:00
+          start_date_time?: string;
+          // The date and time the event should end. @example 2022-03-22 22:00:00
+          end_date_time?: string;
+          // The date the all-day event should start. @example 2022-03-22
+          start_date?: string;
+          // The date the all-day event should end (exclusive). @example 2022-03-23
+          end_date?: string;
+          // Days or weeks that you want to create the event in. @example {'days': 2} or {'weeks': 2}
+          in?: object;
+          // The location of the event. @example Conference Room - F123, Bldg. 002
+          location?: string;
         }
       >;
-    };
-    wakeOnLan: {
-      // Sends a 'magic packet' to wake up a device with 'Wake-On-LAN' capabilities.
-      sendMagicPacket: ServiceFunction<
+      // Retrieves events on a calendar within a time range.
+      getEvents: ServiceFunction<
         object,
         T,
         {
-          // MAC address of the device to wake up. @example aa:bb:cc:dd:ee:ff
-          mac: string;
-          // The IP address of the host to send the magic packet to. Defaults to `255.255.255.255` and is normally not changed. @example 192.168.255.255
-          broadcast_address?: string;
-          // The port to send the magic packet to. Defaults to `9` and is normally not changed. @constraints  number: min: 1, max: 65535, mode: box
-          broadcast_port?: number;
-        }
-      >;
-    };
-    inputDatetime: {
-      // Reloads helpers from the YAML-configuration.
-      reload: ServiceFunction<object, T, object>;
-      // Sets the date and/or time.
-      setDatetime: ServiceFunction<
-        object,
-        T,
-        {
-          // The target date. @example '2019-04-20'
-          date?: string;
-          // The target time. @example '05:04:20'
-          time?: string;
-          // The target date & time. @example '2019-04-20 05:04:20'
-          datetime?: string;
-          // The target date & time, expressed by a UNIX timestamp. @constraints  number: min: 0, max: 9223372036854776000, mode: box
-          timestamp?: number;
-        }
-      >;
-    };
-    localtuya: {
-      // Reload localtuya and reconnect to all devices.
-      reload: ServiceFunction<object, T, object>;
-      // Change the value of a datapoint (DP)
-      setDp: ServiceFunction<
-        object,
-        T,
-        {
-          // Device ID of device to change datapoint value for @example 11100118278aab4de001
-          device_id?: object;
-          // Datapoint index @example 1
-          dp?: object;
-          // New value to set
-          value?: object;
+          // Returns active events after this time (exclusive). When not set, defaults to now. @example 2022-03-22 20:00:00
+          start_date_time?: string;
+          // Returns active events before this time (exclusive). Cannot be used with Duration. @example 2022-03-22 22:00:00
+          end_date_time?: string;
+          // Returns active events from Start time for the specified duration.
+          duration?: {
+            hours?: number;
+            days?: number;
+            minutes?: number;
+            seconds?: number;
+          };
         }
       >;
     };
@@ -2705,116 +2535,173 @@ declare module "@hakit/core" {
         }
       >;
     };
-    alarmControlPanel: {
-      // Disarms the alarm.
-      alarmDisarm: ServiceFunction<
+    utilityMeter: {
+      // Resets all counters of a utility meter.
+      reset: ServiceFunction<object, T, object>;
+      // Calibrates a utility meter sensor.
+      calibrate: ServiceFunction<
         object,
         T,
         {
-          // Code to disarm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Arms the alarm in the home mode.
-      alarmArmHome: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Arms the alarm in the away mode.
-      alarmArmAway: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Arms the alarm in the night mode.
-      alarmArmNight: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Arms the alarm in the vacation mode.
-      alarmArmVacation: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Arms the alarm while allowing to bypass a custom area.
-      alarmArmCustomBypass: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
-        }
-      >;
-      // Triggers the alarm manually.
-      alarmTrigger: ServiceFunction<
-        object,
-        T,
-        {
-          // Code to arm the alarm. @example 1234
-          code?: string;
+          // Value to which set the meter. @example 100
+          value: string;
         }
       >;
     };
-    alarmo: {
-      //
-      arm: ServiceFunction<
+    openaiConversation: {
+      // Sends a conversational query to ChatGPT including any attached image or PDF files
+      generateContent: ServiceFunction<
         object,
         T,
         {
-          //  @example alarm_control_panel.alarm
-          entity_id: string;
-          //  @example 1234
-          code?: string;
-          //  @example away
-          mode?: "away" | "night" | "home" | "vacation" | "custom";
-          //
-          skip_delay?: boolean;
-          //
-          force?: boolean;
+          // The config entry to use for this action @constraints  config_entry: integration: openai_conversation
+          config_entry: any;
+          // The prompt to send @example Hello, how can I help you?
+          prompt: string;
+          // List of files to upload @example - /path/to/file1.txt - /path/to/file2.txt
+          filenames?: string;
+        }
+      >;
+      // Turns a prompt into an image
+      generateImage: ServiceFunction<
+        object,
+        T,
+        {
+          // The config entry to use for this action @constraints  config_entry: integration: openai_conversation
+          config_entry: any;
+          // The text to turn into an image @example A photo of a dog
+          prompt: string;
+          // The size of the image to generate @example 1024x1024
+          size?: "1024x1024" | "1024x1792" | "1792x1024";
+          // The quality of the image that will be generated @example standard
+          quality?: "standard" | "hd";
+          // The style of the generated image @example vivid
+          style?: "vivid" | "natural";
+        }
+      >;
+    };
+    nordpool: {
+      // Action that gets the raw hourly price for spesific date from Nordpool
+      hourly: ServiceFunction<
+        object,
+        T,
+        {
+          // What currecy should the prices be returned in @example NOK
+          currency?: object;
+          // For what year, default to currect year @example YYYY-MM-DD
+          date?: object;
+          // Return the prices for what price area @example NO2
+          area?: object;
+        }
+      >;
+      // Action that gets the raw aggrigated yearly prices from Nordpool
+      yearly: ServiceFunction<
+        object,
+        T,
+        {
+          // What currecy should the prices be returned in @example NOK
+          currency?: object;
+          // For what year, default to currect year @example 2024
+          year?: object;
+          // Return the prices for what price area @example NO2
+          area?: object;
+        }
+      >;
+      // Action that gets the raw aggrigated monthly prices from Nordpool
+      monthly: ServiceFunction<
+        object,
+        T,
+        {
+          // What currecy should the prices be returned in @example NOK
+          currency?: object;
+          // For what year, default to currect year @example 2024
+          year?: object;
+          // Return the prices for what price area @example NO2
+          area?: object;
+        }
+      >;
+      // Action that gets the raw aggrigated daily prices from Nordpool
+      daily: ServiceFunction<
+        object,
+        T,
+        {
+          // What currecy should the prices be returned in @example NOK
+          currency?: object;
+          // For what year, default to currect year @example 2024
+          year?: object;
+          // Return the prices for what price area @example NO2
+          area?: object;
         }
       >;
       //
-      disarm: ServiceFunction<
+      weekly: ServiceFunction<object, T, object>;
+    };
+    inputText: {
+      // Reloads helpers from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Sets the value.
+      setValue: ServiceFunction<
         object,
         T,
         {
-          //  @example alarm_control_panel.alarm
-          entity_id: string;
-          //  @example 1234
-          code?: string;
+          // The target value. @example This is an example text
+          value: string;
         }
       >;
+    };
+    multiscrape: {
+      // Reload all rest entities and notify services
+      reload: ServiceFunction<object, T, object>;
       //
-      enableUser: ServiceFunction<
+      getContent: ServiceFunction<object, T, object>;
+      //
+      scrape: ServiceFunction<object, T, object>;
+      // Triggers an update for the multiscrape scraper_noname_0 integration, independent of the update interval.
+      triggerScraperNoname0: ServiceFunction<object, T, object>;
+    };
+    shellCommand: {
+      //
+      pushToGit: ServiceFunction<object, T, object>;
+      //
+      pullGit: ServiceFunction<object, T, object>;
+    };
+    commandLine: {
+      // Reloads command line configuration from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+    };
+    inputDatetime: {
+      // Reloads helpers from the YAML-configuration.
+      reload: ServiceFunction<object, T, object>;
+      // Sets the date and/or time.
+      setDatetime: ServiceFunction<
         object,
         T,
         {
-          //  @example Frank
-          name: string;
+          // The target date. @example '2019-04-20'
+          date?: string;
+          // The target time. @example '05:04:20'
+          time?: string;
+          // The target date & time. @example '2019-04-20 05:04:20'
+          datetime?: string;
+          // The target date & time, expressed by a UNIX timestamp. @constraints  number: min: 0, max: 9223372036854776000, mode: box
+          timestamp?: number;
         }
       >;
-      //
-      disableUser: ServiceFunction<
+    };
+    localtuya: {
+      // Reload localtuya and reconnect to all devices.
+      reload: ServiceFunction<object, T, object>;
+      // Change the value of a datapoint (DP)
+      setDp: ServiceFunction<
         object,
         T,
         {
-          //  @example Frank
-          name: string;
+          // Device ID of device to change datapoint value for @example 11100118278aab4de001
+          device_id?: object;
+          // Datapoint index @example 1
+          dp?: object;
+          // New value to set
+          value?: object;
         }
       >;
     };
@@ -2911,6 +2798,66 @@ declare module "@hakit/core" {
       >;
       // Removes all to-do list items that have been completed.
       removeCompletedItems: ServiceFunction<object, T, object>;
+    };
+    remote: {
+      // Sends the turn off command.
+      turnOff: ServiceFunction<object, T, object>;
+      // Sends the turn on command.
+      turnOn: ServiceFunction<
+        object,
+        T,
+        {
+          // Activity ID or activity name to be started. @example BedroomTV
+          activity?: string;
+        }
+      >;
+      // Sends the toggle command.
+      toggle: ServiceFunction<object, T, object>;
+      // Sends a command or a list of commands to a device.
+      sendCommand: ServiceFunction<
+        object,
+        T,
+        {
+          // Device ID to send command to. @example 32756745
+          device?: string;
+          // A single command or a list of commands to send. @example Play
+          command: object;
+          // The number of times you want to repeat the commands. @constraints  number: min: 0, max: 255
+          num_repeats?: number;
+          // The time you want to wait in between repeated commands. @constraints  number: min: 0, max: 60, step: 0.1, unit_of_measurement: seconds
+          delay_secs?: number;
+          // The time you want to have it held before the release is send. @constraints  number: min: 0, max: 60, step: 0.1, unit_of_measurement: seconds
+          hold_secs?: number;
+        }
+      >;
+      // Learns a command or a list of commands from a device.
+      learnCommand: ServiceFunction<
+        object,
+        T,
+        {
+          // Device ID to learn command from. @example television
+          device?: string;
+          // A single command or a list of commands to learn. @example Turn on
+          command?: object;
+          // The type of command to be learned.
+          command_type?: "ir" | "rf";
+          // If code must be stored as an alternative. This is useful for discrete codes. Discrete codes are used for toggles that only perform one function. For example, a code to only turn a device on. If it is on already, sending the code won't change the state.
+          alternative?: boolean;
+          // Timeout for the command to be learned. @constraints  number: min: 0, max: 60, step: 5, unit_of_measurement: seconds
+          timeout?: number;
+        }
+      >;
+      // Deletes a command or a list of commands from the database.
+      deleteCommand: ServiceFunction<
+        object,
+        T,
+        {
+          // Device from which commands will be deleted. @example television
+          device?: string;
+          // The single command or the list of commands to be deleted. @example Mute
+          command: object;
+        }
+      >;
     };
     button: {
       // Press the button entity.
@@ -3082,38 +3029,6 @@ declare module "@hakit/core" {
       // Toggles a valve open/closed.
       toggle: ServiceFunction<object, T, object>;
     };
-    googleHome: {
-      // Delete an alarm from a Google Home device.
-      deleteAlarm: ServiceFunction<
-        object,
-        T,
-        {
-          // Represents a Google Home device (sensor.xxxx_alarms). @example sensor.kitchen_alarms
-          entity_id: string;
-          // Skip refreshing Google Home devices after deleting an alarm. @example true
-          skip_refresh?: boolean;
-          // ID of an alarm (alarm/xxx). @example alarm/6ed06a56-8a58-c6e3-a7d4-03f92c9d8a51
-          alarm_id: string;
-        }
-      >;
-      // Delete a timer from a Google Home device.
-      deleteTimer: ServiceFunction<
-        object,
-        T,
-        {
-          // Represents a Google Home device (sensor.xxxx_alarms). @example sensor.kitchen_timers
-          entity_id: string;
-          // Skip refreshing Google Home devices after deleting a timer. @example true
-          skip_refresh?: boolean;
-          // ID of a timer (timer/xxx). @example timer/6ed06a56-8a58-c6e3-a7d4-03f92c9d8a51
-          timer_id: string;
-        }
-      >;
-      // Reboot a Google Home device.
-      rebootDevice: ServiceFunction<object, T, object>;
-      // Refresh the status of all Google Home Devices.
-      refreshDevices: ServiceFunction<object, T, object>;
-    };
     watchman: {
       // Run the Watchman report
       report: ServiceFunction<
@@ -3124,259 +3039,6 @@ declare module "@hakit/core" {
           parse_config?: boolean;
           //
           advanced_options?: object;
-        }
-      >;
-    };
-    switch: {
-      // Turns a switch off.
-      turnOff: ServiceFunction<object, T, object>;
-      // Turns a switch on.
-      turnOn: ServiceFunction<object, T, object>;
-      // Toggles a switch on/off.
-      toggle: ServiceFunction<object, T, object>;
-    };
-    adaptiveLighting: {
-      // Applies the current Adaptive Lighting settings to lights.
-      apply: ServiceFunction<
-        object,
-        T,
-        {
-          // The `entity_id` of the switch with the settings to apply. 📝
-          entity_id?: string;
-          // A light (or list of lights) to apply the settings to. 💡
-          lights?: string;
-          // Duration of transition when lights change, in seconds. 🕑 @example 10
-          transition?: string;
-          // Whether to adapt the brightness of the light. 🌞 @example true
-          adapt_brightness?: boolean;
-          // Whether to adapt the color on supporting lights. 🌈 @example true
-          adapt_color?: boolean;
-          // Whether to prefer RGB color adjustment over light color temperature when possible. 🌈
-          prefer_rgb_color?: boolean;
-          // Whether to turn on lights that are currently off. 🔆
-          turn_on_lights?: boolean;
-        }
-      >;
-      // Mark whether a light is 'manually controlled'.
-      setManualControl: ServiceFunction<
-        object,
-        T,
-        {
-          // The `entity_id` of the switch in which to (un)mark the light as being `manually controlled`. 📝
-          entity_id?: string;
-          // entity_id(s) of lights, if not specified, all lights in the switch are selected. 💡
-          lights?: string;
-          // Whether to add ('true') or remove ('false') the light from the 'manual_control' list. 🔒 @example true
-          manual_control?: boolean;
-        }
-      >;
-      // Change any settings you'd like in the switch. All options here are the same as in the config flow.
-      changeSwitchSettings: ServiceFunction<
-        object,
-        T,
-        {
-          // Entity ID of the switch. 📝
-          entity_id: string;
-          // Sets the default values not specified in this service call. Options: 'current' (default, retains current values), 'factory' (resets to documented defaults), or 'configuration' (reverts to switch config defaults). ⚙️ @example current
-          use_defaults?: "current" | "configuration" | "factory";
-          // Show all options as attributes on the switch in Home Assistant when set to `true`. 📝
-          include_config_in_attributes?: boolean;
-          // Whether to turn on lights that are currently off. 🔆
-          turn_on_lights?: boolean;
-          // Duration of the first transition when lights turn from `off` to `on` in seconds. ⏲️ @example 1
-          initial_transition?: string;
-          // Duration of transition when 'sleep mode' is toggled in seconds. 😴 @example 1
-          sleep_transition?: string;
-          // Maximum brightness percentage. 💡 @example 100
-          max_brightness?: string;
-          // Coldest color temperature in Kelvin. ❄️ @example 5500
-          max_color_temp?: string;
-          // Minimum brightness percentage. 💡 @example 1
-          min_brightness?: string;
-          // Warmest color temperature in Kelvin. 🔥 @example 2000
-          min_color_temp?: string;
-          // Adapt lights only when they are turned on (`true`) or keep adapting them (`false`). 🔄
-          only_once?: boolean;
-          // Whether to prefer RGB color adjustment over light color temperature when possible. 🌈
-          prefer_rgb_color?: boolean;
-          // Use separate `light.turn_on` calls for color and brightness, needed for some light types. 🔀
-          separate_turn_on_commands?: boolean;
-          // Delay (ms) between `separate_turn_on_commands` for lights that don't support simultaneous brightness and color setting. ⏲️
-          send_split_delay?: boolean;
-          // Brightness percentage of lights in sleep mode. 😴 @example 1
-          sleep_brightness?: string;
-          // Use either `'rgb_color'` or `'color_temp'` in sleep mode. 🌙 @example color_temp
-          sleep_rgb_or_color_temp?: "rgb_color" | "color_temp";
-          // RGB color in sleep mode (used when `sleep_rgb_or_color_temp` is 'rgb_color'). 🌈
-          sleep_rgb_color?: any;
-          // Color temperature in sleep mode (used when `sleep_rgb_or_color_temp` is `color_temp`) in Kelvin. 😴 @example 1000
-          sleep_color_temp?: string;
-          // Adjust sunrise time with a positive or negative offset in seconds. ⏰ @constraints  number: min: 0, max: 86300
-          sunrise_offset?: number;
-          // Set a fixed time (HH:MM:SS) for sunrise. 🌅
-          sunrise_time?: string;
-          // Adjust sunset time with a positive or negative offset in seconds. ⏰ @constraints  number: min: 0, max: 86300
-          sunset_offset?: number;
-          // Set a fixed time (HH:MM:SS) for sunset. 🌇
-          sunset_time?: string;
-          // Set the latest virtual sunrise time (HH:MM:SS), allowing for earlier sunrises. 🌅
-          max_sunrise_time?: string;
-          // Set the earliest virtual sunset time (HH:MM:SS), allowing for later sunsets. 🌇
-          min_sunset_time?: string;
-          // Disable Adaptive Lighting if another source calls `light.turn_on` while lights are on and being adapted. Note that this calls `homeassistant.update_entity` every `interval`! 🔒 @example true
-          take_over_control?: boolean;
-          // Detects and halts adaptations for non-`light.turn_on` state changes. Needs `take_over_control` enabled. 🕵️ Caution: ⚠️ Some lights might falsely indicate an 'on' state, which could result in lights turning on unexpectedly. Disable this feature if you encounter such issues.
-          detect_non_ha_changes?: boolean;
-          // Duration of transition when lights change, in seconds. 🕑 @example 45
-          transition?: string;
-          // Wait time (seconds) between light turn on and Adaptive Lighting applying changes. Might help to avoid flickering. ⏲️
-          adapt_delay?: string;
-          // Automatically reset the manual control after a number of seconds. Set to 0 to disable. ⏲️
-          autoreset_control_seconds?: string;
-        }
-      >;
-    };
-    weather: {
-      // Retrieves the forecast from selected weather services.
-      getForecasts: ServiceFunction<
-        object,
-        T,
-        {
-          // The scope of the weather forecast.
-          type: "daily" | "hourly" | "twice_daily";
-        }
-      >;
-    };
-    image: {
-      // Takes a snapshot from an image.
-      snapshot: ServiceFunction<
-        object,
-        T,
-        {
-          // Template of a filename. Variable available is `entity_id`. @example /tmp/image_snapshot.jpg
-          filename: string;
-        }
-      >;
-    };
-    time: {
-      // Sets the time.
-      setValue: ServiceFunction<
-        object,
-        T,
-        {
-          // The time to set. @example 22:15
-          time: string;
-        }
-      >;
-    };
-    vacuum: {
-      // Starts or resumes the cleaning task.
-      start: ServiceFunction<object, T, object>;
-      // Pauses the cleaning task.
-      pause: ServiceFunction<object, T, object>;
-      // Tells the vacuum cleaner to return to its dock.
-      returnToBase: ServiceFunction<object, T, object>;
-      // Tells the vacuum cleaner to do a spot clean-up.
-      cleanSpot: ServiceFunction<object, T, object>;
-      // Locates the vacuum cleaner robot.
-      locate: ServiceFunction<object, T, object>;
-      // Stops the current cleaning task.
-      stop: ServiceFunction<object, T, object>;
-      // Sets the fan speed of the vacuum cleaner.
-      setFanSpeed: ServiceFunction<
-        object,
-        T,
-        {
-          // Fan speed. The value depends on the integration. Some integrations have speed steps, like 'medium'. Some use a percentage, between 0 and 100. @example low
-          fan_speed: string;
-        }
-      >;
-      // Sends a command to the vacuum cleaner.
-      sendCommand: ServiceFunction<
-        object,
-        T,
-        {
-          // Command to execute. The commands are integration-specific. @example set_dnd_timer
-          command: string;
-          // Parameters for the command. The parameters are integration-specific. @example { 'key': 'value' }
-          params?: object;
-        }
-      >;
-    };
-    roborock: {
-      // Retrieves the map and room information of your device.
-      getMaps: ServiceFunction<object, T, object>;
-      // Retrieves the current position of the vacuum.
-      getVacuumCurrentPosition: ServiceFunction<object, T, object>;
-      // Sends the vacuum to a specific position.
-      setVacuumGotoPosition: ServiceFunction<
-        object,
-        T,
-        {
-          // Coordinates are relative to the dock. x=25500,y=25500 is the dock position. @example 27500
-          x: string;
-          // Coordinates are relative to the dock. x=25500,y=25500 is the dock position. @example 32000
-          y: string;
-        }
-      >;
-    };
-    remote: {
-      // Sends the turn off command.
-      turnOff: ServiceFunction<object, T, object>;
-      // Sends the turn on command.
-      turnOn: ServiceFunction<
-        object,
-        T,
-        {
-          // Activity ID or activity name to be started. @example BedroomTV
-          activity?: string;
-        }
-      >;
-      // Sends the toggle command.
-      toggle: ServiceFunction<object, T, object>;
-      // Sends a command or a list of commands to a device.
-      sendCommand: ServiceFunction<
-        object,
-        T,
-        {
-          // Device ID to send command to. @example 32756745
-          device?: string;
-          // A single command or a list of commands to send. @example Play
-          command: object;
-          // The number of times you want to repeat the commands. @constraints  number: min: 0, max: 255
-          num_repeats?: number;
-          // The time you want to wait in between repeated commands. @constraints  number: min: 0, max: 60, step: 0.1, unit_of_measurement: seconds
-          delay_secs?: number;
-          // The time you want to have it held before the release is send. @constraints  number: min: 0, max: 60, step: 0.1, unit_of_measurement: seconds
-          hold_secs?: number;
-        }
-      >;
-      // Learns a command or a list of commands from a device.
-      learnCommand: ServiceFunction<
-        object,
-        T,
-        {
-          // Device ID to learn command from. @example television
-          device?: string;
-          // A single command or a list of commands to learn. @example Turn on
-          command?: object;
-          // The type of command to be learned.
-          command_type?: "ir" | "rf";
-          // If code must be stored as an alternative. This is useful for discrete codes. Discrete codes are used for toggles that only perform one function. For example, a code to only turn a device on. If it is on already, sending the code won't change the state.
-          alternative?: boolean;
-          // Timeout for the command to be learned. @constraints  number: min: 0, max: 60, step: 5, unit_of_measurement: seconds
-          timeout?: number;
-        }
-      >;
-      // Deletes a command or a list of commands from the database.
-      deleteCommand: ServiceFunction<
-        object,
-        T,
-        {
-          // Device from which commands will be deleted. @example television
-          device?: string;
-          // The single command or the list of commands to be deleted. @example Mute
-          command: object;
         }
       >;
     };
@@ -3524,6 +3186,231 @@ declare module "@hakit/core" {
       turnOff: ServiceFunction<object, T, object>;
       // Toggles the siren on/off.
       toggle: ServiceFunction<object, T, object>;
+    };
+    googleHome: {
+      // Delete an alarm from a Google Home device.
+      deleteAlarm: ServiceFunction<
+        object,
+        T,
+        {
+          // Represents a Google Home device (sensor.xxxx_alarms). @example sensor.kitchen_alarms
+          entity_id: string;
+          // Skip refreshing Google Home devices after deleting an alarm. @example true
+          skip_refresh?: boolean;
+          // ID of an alarm (alarm/xxx). @example alarm/6ed06a56-8a58-c6e3-a7d4-03f92c9d8a51
+          alarm_id: string;
+        }
+      >;
+      // Delete a timer from a Google Home device.
+      deleteTimer: ServiceFunction<
+        object,
+        T,
+        {
+          // Represents a Google Home device (sensor.xxxx_alarms). @example sensor.kitchen_timers
+          entity_id: string;
+          // Skip refreshing Google Home devices after deleting a timer. @example true
+          skip_refresh?: boolean;
+          // ID of a timer (timer/xxx). @example timer/6ed06a56-8a58-c6e3-a7d4-03f92c9d8a51
+          timer_id: string;
+        }
+      >;
+      // Reboot a Google Home device.
+      rebootDevice: ServiceFunction<object, T, object>;
+      // Refresh the status of all Google Home Devices.
+      refreshDevices: ServiceFunction<object, T, object>;
+    };
+    weather: {
+      // Retrieves the forecast from selected weather services.
+      getForecasts: ServiceFunction<
+        object,
+        T,
+        {
+          // The scope of the weather forecast.
+          type: "daily" | "hourly" | "twice_daily";
+        }
+      >;
+    };
+    switch: {
+      // Turns a switch off.
+      turnOff: ServiceFunction<object, T, object>;
+      // Turns a switch on.
+      turnOn: ServiceFunction<object, T, object>;
+      // Toggles a switch on/off.
+      toggle: ServiceFunction<object, T, object>;
+    };
+    adaptiveLighting: {
+      // Applies the current Adaptive Lighting settings to lights.
+      apply: ServiceFunction<
+        object,
+        T,
+        {
+          // The `entity_id` of the switch with the settings to apply. 📝
+          entity_id?: string;
+          // A light (or list of lights) to apply the settings to. 💡
+          lights?: string;
+          // Duration of transition when lights change, in seconds. 🕑 @example 10
+          transition?: string;
+          // Whether to adapt the brightness of the light. 🌞 @example true
+          adapt_brightness?: boolean;
+          // Whether to adapt the color on supporting lights. 🌈 @example true
+          adapt_color?: boolean;
+          // Whether to prefer RGB color adjustment over light color temperature when possible. 🌈
+          prefer_rgb_color?: boolean;
+          // Whether to turn on lights that are currently off. 🔆
+          turn_on_lights?: boolean;
+        }
+      >;
+      // Mark whether a light is 'manually controlled'.
+      setManualControl: ServiceFunction<
+        object,
+        T,
+        {
+          // The `entity_id` of the switch in which to (un)mark the light as being `manually controlled`. 📝
+          entity_id?: string;
+          // entity_id(s) of lights, if not specified, all lights in the switch are selected. 💡
+          lights?: string;
+          // Whether to add ('true') or remove ('false') the light from the 'manual_control' list. 🔒 @example true
+          manual_control?: boolean;
+        }
+      >;
+      // Change any settings you'd like in the switch. All options here are the same as in the config flow.
+      changeSwitchSettings: ServiceFunction<
+        object,
+        T,
+        {
+          // Entity ID of the switch. 📝
+          entity_id: string;
+          // Sets the default values not specified in this service call. Options: 'current' (default, retains current values), 'factory' (resets to documented defaults), or 'configuration' (reverts to switch config defaults). ⚙️ @example current
+          use_defaults?: "current" | "configuration" | "factory";
+          // Show all options as attributes on the switch in Home Assistant when set to `true`. 📝
+          include_config_in_attributes?: boolean;
+          // Whether to turn on lights that are currently off. 🔆
+          turn_on_lights?: boolean;
+          // Duration of the first transition when lights turn from `off` to `on` in seconds. ⏲️ @example 1
+          initial_transition?: string;
+          // Duration of transition when 'sleep mode' is toggled in seconds. 😴 @example 1
+          sleep_transition?: string;
+          // Maximum brightness percentage. 💡 @example 100
+          max_brightness?: string;
+          // Coldest color temperature in Kelvin. ❄️ @example 5500
+          max_color_temp?: string;
+          // Minimum brightness percentage. 💡 @example 1
+          min_brightness?: string;
+          // Warmest color temperature in Kelvin. 🔥 @example 2000
+          min_color_temp?: string;
+          // Adapt lights only when they are turned on (`true`) or keep adapting them (`false`). 🔄
+          only_once?: boolean;
+          // Whether to prefer RGB color adjustment over light color temperature when possible. 🌈
+          prefer_rgb_color?: boolean;
+          // Use separate `light.turn_on` calls for color and brightness, needed for some light types. 🔀
+          separate_turn_on_commands?: boolean;
+          // Delay (ms) between `separate_turn_on_commands` for lights that don't support simultaneous brightness and color setting. ⏲️
+          send_split_delay?: boolean;
+          // Brightness percentage of lights in sleep mode. 😴 @example 1
+          sleep_brightness?: string;
+          // Use either `'rgb_color'` or `'color_temp'` in sleep mode. 🌙 @example color_temp
+          sleep_rgb_or_color_temp?: "rgb_color" | "color_temp";
+          // RGB color in sleep mode (used when `sleep_rgb_or_color_temp` is 'rgb_color'). 🌈
+          sleep_rgb_color?: any;
+          // Color temperature in sleep mode (used when `sleep_rgb_or_color_temp` is `color_temp`) in Kelvin. 😴 @example 1000
+          sleep_color_temp?: string;
+          // Adjust sunrise time with a positive or negative offset in seconds. ⏰ @constraints  number: min: 0, max: 86300
+          sunrise_offset?: number;
+          // Set a fixed time (HH:MM:SS) for sunrise. 🌅
+          sunrise_time?: string;
+          // Adjust sunset time with a positive or negative offset in seconds. ⏰ @constraints  number: min: 0, max: 86300
+          sunset_offset?: number;
+          // Set a fixed time (HH:MM:SS) for sunset. 🌇
+          sunset_time?: string;
+          // Set the latest virtual sunrise time (HH:MM:SS), allowing for earlier sunrises. 🌅
+          max_sunrise_time?: string;
+          // Set the earliest virtual sunset time (HH:MM:SS), allowing for later sunsets. 🌇
+          min_sunset_time?: string;
+          // Disable Adaptive Lighting if another source calls `light.turn_on` while lights are on and being adapted. Note that this calls `homeassistant.update_entity` every `interval`! 🔒 @example true
+          take_over_control?: boolean;
+          // Detects and halts adaptations for non-`light.turn_on` state changes. Needs `take_over_control` enabled. 🕵️ Caution: ⚠️ Some lights might falsely indicate an 'on' state, which could result in lights turning on unexpectedly. Disable this feature if you encounter such issues.
+          detect_non_ha_changes?: boolean;
+          // Duration of transition when lights change, in seconds. 🕑 @example 45
+          transition?: string;
+          // Wait time (seconds) between light turn on and Adaptive Lighting applying changes. Might help to avoid flickering. ⏲️
+          adapt_delay?: string;
+          // Automatically reset the manual control after a number of seconds. Set to 0 to disable. ⏲️
+          autoreset_control_seconds?: string;
+        }
+      >;
+    };
+    image: {
+      // Takes a snapshot from an image.
+      snapshot: ServiceFunction<
+        object,
+        T,
+        {
+          // Template of a filename. Variable available is `entity_id`. @example /tmp/image_snapshot.jpg
+          filename: string;
+        }
+      >;
+    };
+    time: {
+      // Sets the time.
+      setValue: ServiceFunction<
+        object,
+        T,
+        {
+          // The time to set. @example 22:15
+          time: string;
+        }
+      >;
+    };
+    vacuum: {
+      // Starts or resumes the cleaning task.
+      start: ServiceFunction<object, T, object>;
+      // Pauses the cleaning task.
+      pause: ServiceFunction<object, T, object>;
+      // Tells the vacuum cleaner to return to its dock.
+      returnToBase: ServiceFunction<object, T, object>;
+      // Tells the vacuum cleaner to do a spot clean-up.
+      cleanSpot: ServiceFunction<object, T, object>;
+      // Locates the vacuum cleaner robot.
+      locate: ServiceFunction<object, T, object>;
+      // Stops the current cleaning task.
+      stop: ServiceFunction<object, T, object>;
+      // Sets the fan speed of the vacuum cleaner.
+      setFanSpeed: ServiceFunction<
+        object,
+        T,
+        {
+          // Fan speed. The value depends on the integration. Some integrations have speed steps, like 'medium'. Some use a percentage, between 0 and 100. @example low
+          fan_speed: string;
+        }
+      >;
+      // Sends a command to the vacuum cleaner.
+      sendCommand: ServiceFunction<
+        object,
+        T,
+        {
+          // Command to execute. The commands are integration-specific. @example set_dnd_timer
+          command: string;
+          // Parameters for the command. The parameters are integration-specific. @example { 'key': 'value' }
+          params?: object;
+        }
+      >;
+    };
+    roborock: {
+      // Retrieves the map and room information of your device.
+      getMaps: ServiceFunction<object, T, object>;
+      // Retrieves the current position of the vacuum.
+      getVacuumCurrentPosition: ServiceFunction<object, T, object>;
+      // Sends the vacuum to a specific position.
+      setVacuumGotoPosition: ServiceFunction<
+        object,
+        T,
+        {
+          // Coordinates are relative to the dock. x=25500,y=25500 is the dock position. @example 27500
+          x: string;
+          // Coordinates are relative to the dock. x=25500,y=25500 is the dock position. @example 32000
+          y: string;
+        }
+      >;
     };
     google: {
       // Adds a new calendar event.
@@ -3808,31 +3695,118 @@ declare module "@hakit/core" {
       // Starts a script if it isn't running, stops it otherwise.
       toggle: ServiceFunction<object, T, object>;
     };
-    automation: {
-      // Triggers the actions of an automation.
-      trigger: ServiceFunction<
+    alarmControlPanel: {
+      // Disarms the alarm.
+      alarmDisarm: ServiceFunction<
         object,
         T,
         {
-          // Defines whether or not the conditions will be skipped.
-          skip_condition?: boolean;
+          // Code to disarm the alarm. @example 1234
+          code?: string;
         }
       >;
-      // Toggles (enable / disable) an automation.
-      toggle: ServiceFunction<object, T, object>;
-      // Enables an automation.
-      turnOn: ServiceFunction<object, T, object>;
-      // Disables an automation.
-      turnOff: ServiceFunction<
+      // Arms the alarm in the home mode.
+      alarmArmHome: ServiceFunction<
         object,
         T,
         {
-          // Stops currently running actions.
-          stop_actions?: boolean;
+          // Code to arm the alarm. @example 1234
+          code?: string;
         }
       >;
-      // Reloads the automation configuration.
-      reload: ServiceFunction<object, T, object>;
+      // Arms the alarm in the away mode.
+      alarmArmAway: ServiceFunction<
+        object,
+        T,
+        {
+          // Code to arm the alarm. @example 1234
+          code?: string;
+        }
+      >;
+      // Arms the alarm in the night mode.
+      alarmArmNight: ServiceFunction<
+        object,
+        T,
+        {
+          // Code to arm the alarm. @example 1234
+          code?: string;
+        }
+      >;
+      // Arms the alarm in the vacation mode.
+      alarmArmVacation: ServiceFunction<
+        object,
+        T,
+        {
+          // Code to arm the alarm. @example 1234
+          code?: string;
+        }
+      >;
+      // Arms the alarm while allowing to bypass a custom area.
+      alarmArmCustomBypass: ServiceFunction<
+        object,
+        T,
+        {
+          // Code to arm the alarm. @example 1234
+          code?: string;
+        }
+      >;
+      // Triggers the alarm manually.
+      alarmTrigger: ServiceFunction<
+        object,
+        T,
+        {
+          // Code to arm the alarm. @example 1234
+          code?: string;
+        }
+      >;
+    };
+    alarmo: {
+      //
+      arm: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example alarm_control_panel.alarm
+          entity_id: string;
+          //  @example 1234
+          code?: string;
+          //  @example away
+          mode?: "away" | "night" | "home" | "vacation" | "custom";
+          //
+          skip_delay?: boolean;
+          //
+          force?: boolean;
+        }
+      >;
+      //
+      disarm: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example alarm_control_panel.alarm
+          entity_id: string;
+          //  @example 1234
+          code?: string;
+        }
+      >;
+      //
+      enableUser: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example Frank
+          name: string;
+        }
+      >;
+      //
+      disableUser: ServiceFunction<
+        object,
+        T,
+        {
+          //  @example Frank
+          name: string;
+        }
+      >;
     };
     powercalc: {
       // Batch change configuration of all Powercalc config entries
@@ -3965,6 +3939,32 @@ declare module "@hakit/core" {
         }
       >;
     };
+    automation: {
+      // Triggers the actions of an automation.
+      trigger: ServiceFunction<
+        object,
+        T,
+        {
+          // Defines whether or not the conditions will be skipped.
+          skip_condition?: boolean;
+        }
+      >;
+      // Toggles (enable / disable) an automation.
+      toggle: ServiceFunction<object, T, object>;
+      // Enables an automation.
+      turnOn: ServiceFunction<object, T, object>;
+      // Disables an automation.
+      turnOff: ServiceFunction<
+        object,
+        T,
+        {
+          // Stops currently running actions.
+          stop_actions?: boolean;
+        }
+      >;
+      // Reloads the automation configuration.
+      reload: ServiceFunction<object, T, object>;
+    };
     repairs: {
       // Removes a manually created Home Assistant repairs issue. This action can only remove issues created with the `repairs_create` action.
       remove: ServiceFunction<
@@ -4045,7 +4045,6 @@ declare module "@hakit/core" {
       | "update.home_assistant_operating_system_update"
       | "binary_sensor.mosquitto_broker_kor"
       | "binary_sensor.zigbee2mqtt_running"
-      | "binary_sensor.lagar_mat"
       | "binary_sensor.enhet_ansluten"
       | "binary_sensor.is_anyone_home"
       | "binary_sensor.sover_2"
@@ -4072,7 +4071,6 @@ declare module "@hakit/core" {
       | "sensor.template_udm_version"
       | "sensor.template_hass_next_release"
       | "sensor.template_updates"
-      | "sensor.plattang_anvands"
       | "sensor.volym"
       | "sensor.benjamin_rum"
       | "sensor.rum_kalla"
@@ -4080,6 +4078,15 @@ declare module "@hakit/core" {
       | "binary_sensor.remote_ui"
       | "stt.home_assistant_cloud"
       | "tts.home_assistant_cloud"
+      | "binary_sensor.night"
+      | "sensor.time"
+      | "sensor.date"
+      | "sensor.date_time"
+      | "binary_sensor.day"
+      | "binary_sensor.morning"
+      | "binary_sensor.midday"
+      | "binary_sensor.evening"
+      | "binary_sensor.quiet_time"
       | "sensor.happy_wifi_happy_lifi"
       | "sensor.bertil_avbrott"
       | "sensor.room_audio"
@@ -4105,20 +4112,8 @@ declare module "@hakit/core" {
       | "binary_sensor.wilmisen_wifi_hemma"
       | "binary_sensor.helg"
       | "binary_sensor.template_udm_internet"
-      | "sensor.hass_release_notes"
-      | "sensor.hass_release_notes_beta"
-      | "binary_sensor.night"
-      | "sensor.time"
-      | "sensor.date"
-      | "sensor.date_time"
-      | "binary_sensor.day"
-      | "binary_sensor.morning"
-      | "binary_sensor.midday"
-      | "binary_sensor.evening"
-      | "binary_sensor.quiet_time"
-      | "sensor.replay_office_lights"
-      | "sensor.replay_kitchen_lights"
-      | "sensor.replay_living_room_lights"
+      | "conversation.home_assistant"
+      | "light.flux_dum"
       | "scene.sovrum_smink"
       | "scene.film_mys"
       | "scene.jobba_hemma"
@@ -4137,14 +4132,12 @@ declare module "@hakit/core" {
       | "group.occupancy_night"
       | "group.speakers"
       | "group.audio_devices"
-      | "light.flux_dum"
       | "light.sanglampor"
       | "binary_sensor.rorelse_hemma"
       | "binary_sensor.sensors"
       | "media_player.hogtalare_2"
       | "light.alla_lampor"
       | "light.sovrum_helper"
-      | "conversation.home_assistant"
       | "alert.speakers_alert_active"
       | "alert.post_info_alert_active"
       | "zone.wilma_jobb"
@@ -4163,20 +4156,6 @@ declare module "@hakit/core" {
       | "input_select.recycle_pickup"
       | "input_select.spotify_source"
       | "input_select.spotify_playlist"
-      | "timer.reset_switch"
-      | "timer.kok"
-      | "timer.sovrum_dag"
-      | "timer.sovrum_natt"
-      | "timer.smink_flux"
-      | "timer.godnatt"
-      | "timer.platttang_tid"
-      | "timer.hall"
-      | "timer.vardagsrum"
-      | "timer.kontor"
-      | "timer.sovrum_timer"
-      | "timer.badrum_timer"
-      | "timer.garderob"
-      | "timer.vattenskal"
       | "input_boolean.speakers_down_notify"
       | "input_boolean.sensors_down_notify"
       | "input_boolean.lights_down_notify"
@@ -4198,8 +4177,25 @@ declare module "@hakit/core" {
       | "input_boolean.shuffle_spotify"
       | "input_boolean.good_morning_report"
       | "input_boolean.master_bedroom_alarm"
+      | "timer.reset_switch"
+      | "timer.kok"
+      | "timer.sovrum_dag"
+      | "timer.sovrum_natt"
+      | "timer.smink_flux"
+      | "timer.godnatt"
+      | "timer.platttang_tid"
+      | "timer.hall"
+      | "timer.vardagsrum"
+      | "timer.kontor"
+      | "timer.sovrum_timer"
+      | "timer.badrum_timer"
+      | "timer.garderob"
+      | "timer.vattenskal"
+      | "sensor.replay_kitchen_lights"
       | "sensor.replay_bedroom_lights"
       | "sensor.replay_hallway_lights"
+      | "sensor.replay_office_lights"
+      | "sensor.replay_living_room_lights"
       | "zone.home"
       | "input_number.roborock_room_enum_sovrum"
       | "input_number.roborock_room_enum_kok_2"
@@ -4232,11 +4228,16 @@ declare module "@hakit/core" {
       | "input_boolean.tvattmaskin"
       | "input_boolean.kiosk_mode"
       | "input_boolean.default_dashboard"
+      | "sensor.hass_release_notes"
+      | "sensor.hass_release_notes_beta"
       | "sensor.mealie_todays_meal"
       | "sensor.mealie_todays_meal_id"
+      | "sensor.nordpool"
       | "light.lampor_badrum"
       | "light.vardagsrum_lampa"
-      | "light.julstjaron_vardagsrum"
+      | "input_text.kontroll_senaste_kommando"
+      | "input_text.benjamin_room"
+      | "input_text.git_answer"
       | "sun.sun"
       | "sensor.sun_next_dawn"
       | "sensor.sun_next_dusk"
@@ -4246,30 +4247,24 @@ declare module "@hakit/core" {
       | "sensor.sun_next_setting"
       | "input_datetime.last_time_home_benjamin"
       | "input_datetime.last_time_home_wilma"
-      | "input_text.kontroll_senaste_kommando"
-      | "input_text.benjamin_room"
-      | "input_text.git_answer"
       | "input_datetime.senast_damsugat"
       | "input_datetime.senast_damsugat_2"
       | "input_datetime.tvatt"
-      | "sensor.nordpool"
+      | "sensor.luftrenare_partiklar"
+      | "sensor.luftrenare_filter_liv"
       | "select.luftrenare_lage"
       | "select.luftrenare_hastighet"
       | "select.luftrenare_countdown"
-      | "sensor.luftrenare_partiklar"
-      | "sensor.luftrenare_filter_liv"
-      | "alarm_control_panel.alarmo"
-      | "binary_sensor.rack_switch_0_overheating"
-      | "binary_sensor.rack_switch_0_overpowering"
-      | "binary_sensor.rack_switch_0_overvoltage"
-      | "binary_sensor.shellyplusplugs_d4d4da7bf9e0_switch_0_overcurrent"
-      | "button.rack_reboot"
-      | "sensor.rack_power"
-      | "sensor.rack_energy"
-      | "update.rack_firmware_update"
-      | "sensor.elkostnad_dagligen"
-      | "sensor.diesel_pris"
-      | "sensor.elpris_manad"
+      | "media_player.tv_vardagsrum"
+      | "remote.tv_vardagsrum"
+      | "sensor.uptime"
+      | "sensor.all_uppskattad_anvandning_energy_cost"
+      | "sensor.backup_backup_manager_state"
+      | "sensor.backup_next_scheduled_automatic_backup"
+      | "sensor.backup_last_successful_automatic_backup"
+      | "sensor.postnord_delivery_30231"
+      | "sensor.citymail_delivery_30231"
+      | "sensor.mail_delivery_30231"
       | "binary_sensor.galaxy_watch4_bthm_is_charging"
       | "device_tracker.galaxy_watch4_bthm"
       | "sensor.galaxy_watch4_bthm_battery_level"
@@ -4371,6 +4366,14 @@ declare module "@hakit/core" {
       | "sensor.wilmisen_last_update_trigger"
       | "sensor.wilmisen_geocoded_location"
       | "sensor.wilmisen_audio_output"
+      | "binary_sensor.rack_switch_0_overheating"
+      | "binary_sensor.rack_switch_0_overpowering"
+      | "binary_sensor.rack_switch_0_overvoltage"
+      | "binary_sensor.shellyplusplugs_d4d4da7bf9e0_switch_0_overcurrent"
+      | "button.rack_reboot"
+      | "sensor.rack_power"
+      | "sensor.rack_energy"
+      | "update.rack_firmware_update"
       | "sensor.swedish_calendar_date"
       | "sensor.swedish_calendar_weekday"
       | "sensor.swedish_calendar_workfree_day"
@@ -4383,17 +4386,35 @@ declare module "@hakit/core" {
       | "sensor.swedish_calendar_name_day"
       | "sensor.swedish_calendar_flag_day"
       | "sensor.swedish_calendar_theme_day"
-      | "sensor.all_uppskattad_anvandning_energy_cost"
+      | "sensor.disk_use_percent_config"
+      | "sensor.memory_use_percent"
+      | "sensor.processor_use"
       | "sensor.watchman_last_updated"
       | "sensor.watchman_missing_entities"
       | "sensor.watchman_missing_services"
-      | "sensor.postnord_delivery_30231"
-      | "sensor.citymail_delivery_30231"
-      | "sensor.mail_delivery_30231"
-      | "sensor.backup_backup_manager_state"
-      | "sensor.backup_next_scheduled_automatic_backup"
-      | "sensor.backup_last_successful_automatic_backup"
-      | "sensor.ingo"
+      | "sensor.elkostnad_dagligen"
+      | "sensor.elpris_manad"
+      | "sensor.tv_vardagsrum_device"
+      | "sensor.nest_hub_v2_device"
+      | "sensor.nest_hub_v2_alarms"
+      | "sensor.nest_hub_v2_timers"
+      | "sensor.hallen_device"
+      | "sensor.hallen_alarms"
+      | "sensor.hallen_timers"
+      | "sensor.kok_device"
+      | "sensor.kok_alarms"
+      | "sensor.kok_timers"
+      | "sensor.vardagsrum_device"
+      | "sensor.vardagsrum_alarms"
+      | "sensor.vardagsrum_timers"
+      | "number.nest_hub_v2_alarm_volume"
+      | "number.hallen_alarm_volume"
+      | "number.kok_alarm_volume"
+      | "number.vardagsrum_alarm_volume"
+      | "conversation.openai_conversation"
+      | "media_player.benjaminsxbox"
+      | "media_player.xbox"
+      | "weather.smhi_home"
       | "switch.wake_on_lan"
       | "switch.sleep_al"
       | "switch.adaptive_lighting_sleep_mode_dummy"
@@ -4429,15 +4450,170 @@ declare module "@hakit/core" {
       | "switch.vattenskal"
       | "switch.fonster_vardagsrum"
       | "switch.rack"
-      | "sensor.uptime"
-      | "conversation.openai_conversation"
-      | "weather.smhi_home"
+      | "switch.nest_hub_v2_do_not_disturb"
+      | "switch.hallen_do_not_disturb"
+      | "switch.kok_do_not_disturb"
+      | "switch.vardagsrum_do_not_disturb"
+      | "switch.button_card_pre_release"
+      | "update.android_tv_remote_card_with_touchpad_haptic_feedback_keyboard_and_more_update"
+      | "update.your_ha_digital_twin_floor3d_card_update"
+      | "update.multiscrape_update"
+      | "update.rgb_light_card_update"
+      | "update.mini_graph_card_update"
+      | "update.atomic_calendar_revive_update"
+      | "update.vacuum_card_update"
+      | "update.ios_themes_dark_mode_and_light_mode_update"
+      | "update.noctis_update"
+      | "update.opnsense_integration_for_home_assistant_update"
+      | "update.streamline_card_update"
+      | "update.mini_media_player_update"
+      | "update.extended_openai_conversation_update"
+      | "update.bar_card_update"
+      | "update.light_entity_card_update"
+      | "update.kiosk_mode_update"
+      | "update.fold_entity_row_update"
+      | "update.proxmox_ve_update"
+      | "update.dual_gauge_card_update"
+      | "update.card_mod_update"
+      | "update.vertical_stack_in_card_update"
+      | "update.auto_entities_update"
+      | "update.alarmo_update"
+      | "update.powercalc_update"
+      | "update.ui_lovelace_minimalist_update"
+      | "update.weather_radar_card_update"
+      | "update.bubble_card_update"
+      | "update.mushroom_update"
+      | "update.xiaomi_vacuum_map_card_update"
+      | "update.horizon_card_update"
+      | "update.stack_in_card_update"
+      | "update.my_cards_bundle_update"
+      | "update.slider_button_card_update"
+      | "update.svensk_postutdelning_update"
+      | "update.local_tuya_update"
+      | "update.adaptive_lighting_update"
+      | "update.nordpool_update"
+      | "update.jellyfin_update"
+      | "update.layout_card_update"
+      | "update.header_authentication_update"
+      | "update.hacs_update"
+      | "update.swipe_card_update"
+      | "update.button_card_update"
+      | "update.blitzortung_org_lightning_detector_update"
+      | "update.auto_generating_mushroom_dashboard_strategy_update"
+      | "update.mushroom_themes_update"
+      | "update.google_home_update"
+      | "update.llama_conversation_update"
+      | "update.clock_weather_card_update"
+      | "update.decluttering_card_update"
+      | "update.spotcast_update"
+      | "update.apexcharts_card_update"
+      | "update.default_dashboard_update"
+      | "update.state_switch_update"
+      | "update.bubble_update"
+      | "update.weather_chart_card_update"
+      | "update.simple_weather_card_update"
+      | "update.spotify_lovelace_card_update"
+      | "update.spook_not_your_homie_update"
+      | "update.pyscript_update"
+      | "update.sankey_chart_card_update"
+      | "update.home_assistant_swipe_navigation_update"
+      | "update.presence_simulation_update"
+      | "update.watchman_update"
+      | "sensor.z_stick_gen5_usb_controller_status"
+      | "sensor.sensor_hall_node_status"
+      | "button.sensor_hall_ping"
+      | "sensor.sensor_hall_last_seen"
+      | "sensor.ingo"
+      | "sensor.sensor_hall_basic"
+      | "sensor.sensor_hall_air_temperature"
+      | "sensor.sensor_hall_illuminance"
+      | "sensor.sensor_hall_humidity"
+      | "sensor.sensor_hall_ultraviolet"
+      | "button.sensor_hall_idle_home_security_cover_status"
+      | "binary_sensor.multisensor_6_tampering_product_cover_removed"
+      | "button.sensor_hall_idle_home_security_motion_sensor_status"
+      | "binary_sensor.sensor_hall_motion_detection"
+      | "sensor.sensor_hall_battery_level"
+      | "binary_sensor.multisensor_6_low_battery_level"
+      | "update.multisensor_6_firmware"
       | "sensor.current_version"
       | "binary_sensor.home_assistant_versions_update_available"
       | "sensor.home_assistant_versions"
       | "binary_sensor.docker_hub_update_available"
       | "sensor.docker_hub"
       | "sensor.hacs_installed"
+      | "media_player.vardagsrum"
+      | "media_player.kok"
+      | "stt.faster_whisper"
+      | "tts.piper"
+      | "wake_word.openwakeword"
+      | "wake_word.snowboy"
+      | "device_tracker.fw_sanden01"
+      | "device_tracker.fw_iphone"
+      | "device_tracker.fw_benjamins_s21_ultra"
+      | "binary_sensor.fw_pending_notices_present"
+      | "update.fw_firmware_updates_available"
+      | "media_player.hogtalare"
+      | "sensor.fw_memory_used_percentage"
+      | "sensor.fw_cpu_usage"
+      | "sensor.fw_system_load_average_one_minute"
+      | "sensor.fw_system_load_average_five_minute"
+      | "sensor.fw_system_load_average_fifteen_minute"
+      | "sensor.fw_system_boottime"
+      | "sensor.fw_wireguard_server_wireguard_status"
+      | "sensor.fw_wireguard_server_site_status"
+      | "sensor.fw_wireguard_server_mullvad_status"
+      | "sensor.fw_gateway_wan_dhcp_status"
+      | "sensor.fw_gateway_wan_dhcp6_status"
+      | "sensor.fw_gateway_wireguard_gw_status"
+      | "sensor.fw_gateway_mullvad_gw_status"
+      | "sensor.fw_gateway_phonewan_dhcp_status"
+      | "sensor.fw_interface_lan_status"
+      | "sensor.fw_interface_lan_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_lan_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_loopback_status"
+      | "sensor.fw_interface_loopback_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_loopback_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_k3s_status"
+      | "sensor.fw_interface_k3s_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_k3s_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_mgmt_status"
+      | "sensor.fw_interface_mgmt_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_mgmt_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_iot_status"
+      | "sensor.fw_interface_iot_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_iot_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_main_status"
+      | "sensor.fw_interface_main_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_main_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_guest_status"
+      | "sensor.fw_interface_guest_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_guest_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_hostvm_status"
+      | "sensor.fw_interface_hostvm_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_hostvm_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wan_status"
+      | "sensor.fw_interface_wan_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wan_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wifi_status"
+      | "sensor.fw_interface_wifi_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wifi_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_vpnvlan_status"
+      | "sensor.fw_interface_vpnvlan_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_vpnvlan_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_mullvad_status"
+      | "sensor.fw_interface_mullvad_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_mullvad_outbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wireguard_status"
+      | "sensor.fw_interface_wireguard_inbytes_kilobytes_per_second"
+      | "sensor.fw_interface_wireguard_outbytes_kilobytes_per_second"
+      | "sensor.fw_filesystem_used_percentage_root"
+      | "sensor.fw_temp_zone_0"
+      | "sensor.fw_temp_zone_1"
+      | "sensor.fw_dhcp_leases_all"
+      | "media_player.hallen"
+      | "media_player.sovrum"
+      | "sensor.youtube_watching"
       | "binary_sensor.bertil_mop_attached"
       | "binary_sensor.bertil_water_box_attached"
       | "binary_sensor.bertil_cleaning"
@@ -4461,123 +4637,22 @@ declare module "@hakit/core" {
       | "sensor.bertil_last_clean_end"
       | "sensor.bertil_current_room"
       | "vacuum.bertil"
-      | "switch.button_card_pre_release"
-      | "update.state_switch_update"
-      | "update.button_card_update"
-      | "update.swipe_card_update"
-      | "update.auto_entities_update"
-      | "update.powercalc_update"
-      | "update.ui_lovelace_minimalist_update"
-      | "update.weather_radar_card_update"
-      | "update.horizon_card_update"
-      | "update.bubble_update"
-      | "update.stack_in_card_update"
-      | "update.dual_gauge_card_update"
-      | "update.vertical_stack_in_card_update"
-      | "update.card_mod_update"
-      | "update.alarmo_update"
-      | "update.extended_openai_conversation_update"
-      | "update.bar_card_update"
-      | "update.fold_entity_row_update"
-      | "update.llama_conversation_update"
-      | "update.decluttering_card_update"
-      | "update.spotcast_update"
-      | "update.default_dashboard_update"
-      | "update.clock_weather_card_update"
-      | "update.apexcharts_card_update"
-      | "update.header_authentication_update"
-      | "update.hacs_update"
-      | "update.auto_generating_mushroom_dashboard_strategy_update"
-      | "update.mushroom_themes_update"
-      | "update.google_home_update"
-      | "update.nordpool_update"
-      | "update.jellyfin_update"
-      | "update.layout_card_update"
-      | "update.mini_graph_card_update"
-      | "update.noctis_update"
-      | "update.atomic_calendar_revive_update"
-      | "update.light_entity_card_update"
-      | "update.proxmox_ve_update"
-      | "update.your_ha_digital_twin_floor3d_card_update"
-      | "update.multiscrape_update"
-      | "update.ios_themes_dark_mode_and_light_mode_update"
-      | "update.streamline_card_update"
-      | "update.kiosk_mode_update"
-      | "update.simple_weather_card_update"
-      | "update.pyscript_update"
-      | "update.home_assistant_swipe_navigation_update"
-      | "update.watchman_update"
-      | "update.android_tv_remote_card_with_touchpad_haptic_feedback_keyboard_and_more_update"
-      | "update.rgb_light_card_update"
-      | "update.weather_chart_card_update"
-      | "update.spotify_lovelace_card_update"
-      | "update.spook_not_your_homie_update"
-      | "update.sankey_chart_card_update"
-      | "update.presence_simulation_update"
-      | "update.blitzortung_org_lightning_detector_update"
-      | "update.my_cards_bundle_update"
-      | "update.svensk_postutdelning_update"
-      | "update.adaptive_lighting_update"
-      | "update.bubble_card_update"
-      | "update.mushroom_update"
-      | "update.xiaomi_vacuum_map_card_update"
-      | "update.slider_button_card_update"
-      | "update.local_tuya_update"
-      | "update.vacuum_card_update"
-      | "update.opnsense_integration_for_home_assistant_update"
-      | "update.mini_media_player_update"
-      | "media_player.benjaminsxbox"
-      | "media_player.xbox"
+      | "media_player.android_tv"
       | "number.bertil_volume"
       | "switch.bertil_child_lock"
       | "switch.bertil_dnd_switch"
       | "time.bertil_do_not_disturb_begin"
       | "time.bertil_do_not_disturb_end"
-      | "sensor.disk_use_percent_config"
-      | "sensor.memory_use_percent"
-      | "sensor.processor_use"
-      | "sensor.youtube_watching"
       | "button.bertil_matta_vardagsrum"
       | "button.bertil_vardagsrum"
       | "button.bertil_tyst"
       | "button.bertil_after_meals"
       | "button.bertil_full_cleaning"
-      | "media_player.kok"
-      | "media_player.tv_vardagsrum"
-      | "remote.tv_vardagsrum"
-      | "media_player.android_tv"
-      | "sensor.z_stick_gen5_usb_controller_status"
-      | "sensor.sensor_hall_node_status"
-      | "button.sensor_hall_ping"
-      | "sensor.sensor_hall_last_seen"
-      | "sensor.sensor_hall_basic"
-      | "sensor.sensor_hall_air_temperature"
-      | "sensor.sensor_hall_illuminance"
-      | "sensor.sensor_hall_humidity"
-      | "sensor.sensor_hall_ultraviolet"
-      | "button.sensor_hall_idle_home_security_cover_status"
-      | "binary_sensor.multisensor_6_tampering_product_cover_removed"
-      | "button.sensor_hall_idle_home_security_motion_sensor_status"
-      | "binary_sensor.sensor_hall_motion_detection"
-      | "sensor.sensor_hall_battery_level"
-      | "binary_sensor.multisensor_6_low_battery_level"
-      | "wake_word.openwakeword"
-      | "wake_word.snowboy"
-      | "stt.faster_whisper"
-      | "tts.piper"
-      | "update.multisensor_6_firmware"
-      | "media_player.hogtalare"
-      | "media_player.sovrum"
-      | "media_player.vardagsrum"
       | "todo.handla"
       | "todo.forslagslada"
       | "sensor.jarvis_last_msg"
       | "sensor.jarvis_last_location"
       | "sensor.jarvis_last_msg_time"
-      | "media_player.vlc_telnet"
-      | "sensor.imac_cpu"
-      | "sensor.imac_uptime"
-      | "sensor.imac_ip"
       | "script.blinkande_lampor"
       | "script.alarm_utlost"
       | "script.tand_alla_lampor"
@@ -4664,6 +4739,7 @@ declare module "@hakit/core" {
       | "script.google_interjection"
       | "script.jarvis_said_what"
       | "script.google_home_tts_screen"
+      | "media_player.vlc_telnet"
       | "sensor.hem_nearest_device"
       | "sensor.hem_nearest_distance"
       | "sensor.hem_nearest_direction_of_travel"
@@ -4674,68 +4750,10 @@ declare module "@hakit/core" {
       | "sensor.hem_2_nearest_direction_of_travel"
       | "sensor.hem_2_wilma_distance"
       | "sensor.hem_2_wilma_direction_of_travel"
-      | "device_tracker.fw_sanden01"
-      | "device_tracker.fw_iphone"
-      | "device_tracker.fw_benjamins_s21_ultra"
-      | "binary_sensor.fw_pending_notices_present"
-      | "update.fw_firmware_updates_available"
-      | "sensor.fw_memory_used_percentage"
-      | "sensor.fw_cpu_usage"
-      | "sensor.fw_system_load_average_one_minute"
-      | "sensor.fw_system_load_average_five_minute"
-      | "sensor.fw_system_load_average_fifteen_minute"
-      | "sensor.fw_system_boottime"
-      | "sensor.fw_wireguard_server_wireguard_status"
-      | "sensor.fw_wireguard_server_site_status"
-      | "sensor.fw_wireguard_server_mullvad_status"
-      | "sensor.fw_gateway_wan_dhcp_status"
-      | "sensor.fw_gateway_wan_dhcp6_status"
-      | "sensor.fw_gateway_wireguard_gw_status"
-      | "sensor.fw_gateway_mullvad_gw_status"
-      | "sensor.fw_gateway_phonewan_dhcp_status"
-      | "sensor.fw_interface_lan_status"
-      | "sensor.fw_interface_lan_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_lan_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_loopback_status"
-      | "sensor.fw_interface_loopback_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_loopback_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_k3s_status"
-      | "sensor.fw_interface_k3s_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_k3s_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_mgmt_status"
-      | "sensor.fw_interface_mgmt_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_mgmt_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_iot_status"
-      | "sensor.fw_interface_iot_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_iot_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_main_status"
-      | "sensor.fw_interface_main_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_main_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_guest_status"
-      | "sensor.fw_interface_guest_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_guest_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_hostvm_status"
-      | "sensor.fw_interface_hostvm_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_hostvm_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wan_status"
-      | "sensor.fw_interface_wan_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wan_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wifi_status"
-      | "sensor.fw_interface_wifi_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wifi_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_vpnvlan_status"
-      | "sensor.fw_interface_vpnvlan_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_vpnvlan_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_mullvad_status"
-      | "sensor.fw_interface_mullvad_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_mullvad_outbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wireguard_status"
-      | "sensor.fw_interface_wireguard_inbytes_kilobytes_per_second"
-      | "sensor.fw_interface_wireguard_outbytes_kilobytes_per_second"
-      | "sensor.fw_filesystem_used_percentage_root"
-      | "sensor.fw_temp_zone_0"
-      | "sensor.fw_temp_zone_1"
-      | "sensor.fw_dhcp_leases_all"
+      | "sensor.imac_ip"
+      | "sensor.imac_cpu"
+      | "sensor.imac_uptime"
+      | "media_player.spotify_home_assistant"
       | "device_tracker.ty"
       | "device_tracker.gx5c0654"
       | "device_tracker.ty_2"
@@ -7445,167 +7463,93 @@ declare module "@hakit/core" {
       | "device_tracker.44_c4_b4_85_2f_52"
       | "device_tracker.6e_6d_c6_d4_00_59"
       | "device_tracker.49_ef_22_37_33_88"
-      | "calendar.boka_tvattid"
-      | "calendar.familj"
-      | "calendar.benjamin_sanden2_gmail_com"
-      | "calendar.birthdays"
-      | "calendar.helgdagar_i_sverige"
-      | "automation.vardagsrum_minska_ljus_vid_tv"
-      | "automation.pausa_musik_cast"
-      | "automation.godnatt"
-      | "automation.kom_hem"
-      | "automation.lamna_hem"
-      | "automation.hem_satt_volym_kl_21"
-      | "automation.hem_satt_volym_kl_7"
-      | "automation.hem_spela_musik_kl_9"
-      | "automation.hem_spela_musik_06_40"
-      | "automation.vardagsrum_xbox_pa"
-      | "automation.sovrum_i_sangen"
-      | "automation.sovrum_plattang_av"
-      | "automation.sovrum_i_sangen_av"
-      | "automation.hem_hogtalare_spela_mys"
-      | "automation.ny_automation_2"
-      | "automation.mobil_idle_volym"
-      | "automation.sovrum_godnatt_timer_klar"
-      | "automation.sovrum_natt_musik_stopp"
-      | "automation.hall_timer_av"
-      | "automation.hall_rorelse_pa"
-      | "automation.hall_rorelse_av"
-      | "automation.hem_07_10_slang_soporna"
-      | "automation.vardagsrum_rorelse_pa"
-      | "automation.vardagsrum_timer"
-      | "automation.vardagsrum_timer_av"
-      | "automation.hem_sla_pa_musik_helg_knapp"
-      | "automation.kok_timer_av"
-      | "automation.nha_satt_pa_dummy_light"
-      | "automation.kok_volym_kl_6"
-      | "automation.sovrum_dimmer_2"
-      | "automation.internet_wan_nere"
-      | "automation.brevlada_offline"
-      | "automation.brevlada_online"
-      | "automation.kok_av_kvall"
-      | "automation.kontor_rorelse_pa"
-      | "automation.kontor_rorelse_av"
-      | "automation.ny_automation_5"
-      | "automation.sovrum_rorelse_av"
-      | "automation.sovrum_timer"
-      | "automation.vacuum_paused_return_to_dock"
-      | "automation.vacuum_notify_on_error"
-      | "automation.dammsugare_13_00_nagon_hemma"
-      | "automation.kok_dammsugare_efter_mat"
-      | "automation.dammsugare_18_00"
-      | "automation.dammsugare_notis_dockar"
-      | "automation.vardagar_stang_av_tv"
-      | "automation.dammsugare_sovrum_hastighet"
-      | "automation.dammsugare_hall_hastighet"
-      | "automation.dammsugare_kontor_hastighet"
-      | "automation.dammsugare_vardagsrum_hastighet"
-      | "automation.dammsugare_kok_hastighet"
-      | "automation.semester_av"
-      | "automation.medicin_wilma"
-      | "automation.hem_jarvis_halsa1"
-      | "automation.hem_dammsuga_lamna_hem"
-      | "automation.hem_godmorgon"
-      | "automation.ha_update_hacs_4_hours"
-      | "automation.update_restart"
-      | "automation.hem_wilma_sover_pausa_musik"
-      | "automation.kok_lagar_mat_lampa_pa"
-      | "automation.kok_lagar_mat_av_lampa_av"
-      | "automation.jarvis_stanger_av_tv"
-      | "automation.badrum_lampor_pa"
-      | "automation.badrum_timer_av"
-      | "automation.automation_95"
-      | "automation.garderob_rorelse_av"
-      | "automation.sovrum_soluppgang_gardin_oppna"
-      | "automation.sovrum_solljus_helg_gardin_upp"
-      | "automation.solnedgang_julstjarna"
-      | "automation.varna_dorr"
-      | "automation.vattenskal_pa"
-      | "automation.vattenskal_timer"
-      | "automation.vattenskal_timer_av"
-      | "automation.dammsugare_stadar_larma_hemma"
-      | "automation.dammsugare_klar_larma_borta"
-      | "automation.larm_bertil_hemma_2"
-      | "automation.ha_zigbee_nere_notis"
-      | "automation.adaptive_lightning_sovrum_pa"
-      | "automation.github_backup"
-      | "automation.rack_temperatur_notis"
-      | "automation.notify_time_alerts"
-      | "automation.tv_starta_jellyfin"
-      | "automation.reload_android_tv"
-      | "automation.rorelse_lampa_pa_kok"
-      | "automation.lampa_av_kontor"
-      | "automation.kok_rorelse_av_starta_timer"
-      | "media_player.spotify_home_assistant"
+      | "alarm_control_panel.alarmo"
       | "sensor.rack_energy_2"
       | "sensor.rack_energy_2_daily"
       | "sensor.rack_energy_2_weekly"
       | "sensor.rack_energy_2_monthly"
-      | "sensor.garderob_spot_1_power"
-      | "sensor.garderob_spot_1_energy"
-      | "sensor.garderob_spot_1_energy_daily"
-      | "sensor.garderob_spot_1_energy_weekly"
-      | "sensor.garderob_spot_1_energy_monthly"
-      | "sensor.hall_spot_2_power"
-      | "sensor.hall_spot_2_energy"
-      | "sensor.hall_spot_2_energy_daily"
-      | "sensor.hall_spot_2_energy_weekly"
-      | "sensor.hall_spot_2_energy_monthly"
-      | "sensor.fonster_2_vardagsrum_power"
-      | "sensor.fonster_2_vardagsrum_energy"
-      | "sensor.fonster_2_vardagsrum_energy_daily"
-      | "sensor.fonster_2_vardagsrum_energy_weekly"
-      | "sensor.fonster_2_vardagsrum_energy_monthly"
-      | "sensor.fonster_1_vardagsrum_power"
-      | "sensor.fonster_1_vardagsrum_energy"
-      | "sensor.fonster_1_vardagsrum_energy_daily"
-      | "sensor.fonster_1_vardagsrum_energy_weekly"
-      | "sensor.fonster_1_vardagsrum_energy_monthly"
-      | "sensor.sovrum_tak_power"
-      | "sensor.sovrum_tak_energy"
-      | "sensor.sovrum_tak_energy_daily"
-      | "sensor.sovrum_tak_energy_weekly"
-      | "sensor.sovrum_tak_energy_monthly"
-      | "sensor.hall_spot_3_power"
-      | "sensor.hall_spot_3_energy"
-      | "sensor.hall_spot_3_energy_daily"
-      | "sensor.hall_spot_3_energy_weekly"
-      | "sensor.hall_spot_3_energy_monthly"
-      | "sensor.vardagsrum_power_2"
-      | "sensor.vardagsrum_energy_2"
-      | "sensor.vardagsrum_energy_2_daily"
-      | "sensor.vardagsrum_energy_2_weekly"
-      | "sensor.vardagsrum_energy_2_monthly"
-      | "sensor.hall_spot_1_power"
-      | "sensor.hall_spot_1_energy"
-      | "sensor.hall_spot_1_energy_daily"
-      | "sensor.hall_spot_1_energy_weekly"
-      | "sensor.hall_spot_1_energy_monthly"
-      | "sensor.kok_slinga_power"
-      | "sensor.kok_slinga_energy"
-      | "sensor.kok_slinga_energy_daily"
-      | "sensor.kok_slinga_energy_weekly"
-      | "sensor.kok_slinga_energy_monthly"
       | "sensor.garderob_spot_2_power"
       | "sensor.garderob_spot_2_energy"
       | "sensor.garderob_spot_2_energy_daily"
       | "sensor.garderob_spot_2_energy_weekly"
       | "sensor.garderob_spot_2_energy_monthly"
+      | "sensor.garderob_spot_3_power"
+      | "sensor.garderob_spot_3_energy"
+      | "sensor.garderob_spot_3_energy_daily"
+      | "sensor.garderob_spot_3_energy_weekly"
+      | "sensor.garderob_spot_3_energy_monthly"
+      | "sensor.hall_spot_2_power"
+      | "sensor.hall_spot_2_energy"
+      | "sensor.hall_spot_2_energy_daily"
+      | "sensor.hall_spot_2_energy_weekly"
+      | "sensor.hall_spot_2_energy_monthly"
+      | "sensor.garderob_spot_1_power"
+      | "sensor.garderob_spot_1_energy"
+      | "sensor.garderob_spot_1_energy_daily"
+      | "sensor.garderob_spot_1_energy_weekly"
+      | "sensor.garderob_spot_1_energy_monthly"
       | "sensor.slinga_vardagsrum_power"
       | "sensor.slinga_vardagsrum_energy"
       | "sensor.slinga_vardagsrum_energy_daily"
       | "sensor.slinga_vardagsrum_energy_weekly"
       | "sensor.slinga_vardagsrum_energy_monthly"
+      | "sensor.fonster_2_vardagsrum_power"
+      | "sensor.fonster_2_vardagsrum_energy"
+      | "sensor.fonster_2_vardagsrum_energy_daily"
+      | "sensor.fonster_2_vardagsrum_energy_weekly"
+      | "sensor.fonster_2_vardagsrum_energy_monthly"
+      | "sensor.kok_slinga_power"
+      | "sensor.kok_slinga_energy"
+      | "sensor.kok_slinga_energy_daily"
+      | "sensor.kok_slinga_energy_weekly"
+      | "sensor.kok_slinga_energy_monthly"
+      | "sensor.hall_spot_3_power"
+      | "sensor.hall_spot_3_energy"
+      | "sensor.hall_spot_3_energy_daily"
+      | "sensor.hall_spot_3_energy_weekly"
+      | "sensor.hall_spot_3_energy_monthly"
       | "sensor.kontor_tak_power"
       | "sensor.kontor_tak_energy"
       | "sensor.kontor_tak_energy_daily"
       | "sensor.kontor_tak_energy_weekly"
       | "sensor.kontor_tak_energy_monthly"
+      | "sensor.fonster_1_vardagsrum_power"
+      | "sensor.fonster_1_vardagsrum_energy"
+      | "sensor.fonster_1_vardagsrum_energy_daily"
+      | "sensor.fonster_1_vardagsrum_energy_weekly"
+      | "sensor.fonster_1_vardagsrum_energy_monthly"
+      | "sensor.hall_spot_1_power"
+      | "sensor.hall_spot_1_energy"
+      | "sensor.hall_spot_1_energy_daily"
+      | "sensor.hall_spot_1_energy_weekly"
+      | "sensor.hall_spot_1_energy_monthly"
       | "sensor.kok_power_2"
       | "sensor.kok_energy_2"
       | "sensor.kok_energy_2_daily"
       | "sensor.kok_energy_2_weekly"
       | "sensor.kok_energy_2_monthly"
+      | "sensor.kok_tak_power"
+      | "sensor.kok_tak_energy"
+      | "sensor.kok_tak_energy_daily"
+      | "sensor.kok_tak_energy_weekly"
+      | "sensor.kok_tak_energy_monthly"
+      | "sensor.hallen_power_2"
+      | "sensor.hallen_energy_2"
+      | "sensor.hallen_energy_2_daily"
+      | "sensor.hallen_energy_2_weekly"
+      | "sensor.hallen_energy_2_monthly"
+      | "sensor.knapp_badrum_device_power"
+      | "sensor.knapp_badrum_device_energy"
+      | "sensor.vardagsrum_power_2"
+      | "sensor.vardagsrum_energy_2"
+      | "sensor.vardagsrum_energy_2_daily"
+      | "sensor.vardagsrum_energy_2_weekly"
+      | "sensor.vardagsrum_energy_2_monthly"
+      | "sensor.sovrum_tak_power"
+      | "sensor.sovrum_tak_energy"
+      | "sensor.sovrum_tak_energy_daily"
+      | "sensor.sovrum_tak_energy_weekly"
+      | "sensor.sovrum_tak_energy_monthly"
       | "sensor.vardagsrum_lampa_device_power"
       | "sensor.vardagsrum_lampa_device_energy"
       | "sensor.vardagsrum_lampa_device_energy_daily"
@@ -7616,38 +7560,26 @@ declare module "@hakit/core" {
       | "sensor.lampor_badrum_device_energy_daily"
       | "sensor.lampor_badrum_device_energy_weekly"
       | "sensor.lampor_badrum_device_energy_monthly"
-      | "sensor.knapp_badrum_device_power"
-      | "sensor.knapp_badrum_device_energy"
-      | "sensor.hallen_power_2"
-      | "sensor.hallen_energy_2"
-      | "sensor.hallen_energy_2_daily"
-      | "sensor.hallen_energy_2_weekly"
-      | "sensor.hallen_energy_2_monthly"
-      | "sensor.garderob_spot_3_power"
-      | "sensor.garderob_spot_3_energy"
-      | "sensor.garderob_spot_3_energy_daily"
-      | "sensor.garderob_spot_3_energy_weekly"
-      | "sensor.garderob_spot_3_energy_monthly"
-      | "sensor.kok_tak_power"
-      | "sensor.kok_tak_energy"
-      | "sensor.kok_tak_energy_daily"
-      | "sensor.kok_tak_energy_weekly"
-      | "sensor.kok_tak_energy_monthly"
       | "sensor.rack_device_power"
       | "sensor.rack_device_energy"
       | "sensor.rack_device_energy_daily"
       | "sensor.rack_device_energy_weekly"
       | "sensor.rack_device_energy_monthly"
-      | "sensor.vardagsrum_tak_device_power"
-      | "sensor.vardagsrum_tak_device_energy"
-      | "sensor.vardagsrum_tak_device_energy_daily"
-      | "sensor.vardagsrum_tak_device_energy_weekly"
-      | "sensor.vardagsrum_tak_device_energy_monthly"
       | "sensor.badrum_device_power"
       | "sensor.badrum_device_energy"
       | "sensor.badrum_device_energy_daily"
       | "sensor.badrum_device_energy_weekly"
       | "sensor.badrum_device_energy_monthly"
+      | "sensor.vardagsrum_tak_device_power"
+      | "sensor.vardagsrum_tak_device_energy"
+      | "sensor.vardagsrum_tak_device_energy_daily"
+      | "sensor.vardagsrum_tak_device_energy_weekly"
+      | "sensor.vardagsrum_tak_device_energy_monthly"
+      | "calendar.boka_tvattid"
+      | "calendar.familj"
+      | "calendar.benjamin_sanden2_gmail_com"
+      | "calendar.birthdays"
+      | "calendar.helgdagar_i_sverige"
       | "sensor.sanglampa_vanster_power"
       | "sensor.sanglampa_vanster_energy"
       | "sensor.sanglampa_vanster_energy_daily"
@@ -7658,6 +7590,7 @@ declare module "@hakit/core" {
       | "sensor.sanglampa_hoger_energy_daily"
       | "sensor.sanglampa_hoger_energy_weekly"
       | "sensor.sanglampa_hoger_energy_monthly"
+      | "binary_sensor.kok_sensor_occupancy"
       | "sensor.alla_lampor_power"
       | "sensor.alla_lampor_energy"
       | "sensor.alla_lampor_energy_daily"
@@ -7733,11 +7666,11 @@ declare module "@hakit/core" {
       | "sensor.tv_vardagsrum_energy_daily"
       | "sensor.tv_vardagsrum_energy_weekly"
       | "sensor.tv_vardagsrum_energy_monthly"
-      | "sensor.xbox_vardagsrum_remote_power_2"
-      | "sensor.xbox_vardagsrum_remote_energy_2"
-      | "sensor.xbox_vardagsrum_remote_energy_daily_2"
-      | "sensor.xbox_vardagsrum_remote_energy_weekly_2"
-      | "sensor.xbox_vardagsrum_remote_energy_monthly_2"
+      | "sensor.xbox_vardagsrum_remote_power"
+      | "sensor.xbox_vardagsrum_remote_energy"
+      | "sensor.xbox_vardagsrum_remote_energy_daily"
+      | "sensor.xbox_vardagsrum_remote_energy_weekly"
+      | "sensor.xbox_vardagsrum_remote_energy_monthly"
       | "sensor.tv_power"
       | "sensor.tv_energy"
       | "sensor.tv_energy_daily"
@@ -7783,7 +7716,6 @@ declare module "@hakit/core" {
       | "sensor.all_uppskattad_anvandning_energy_daily"
       | "sensor.all_uppskattad_anvandning_energy_weekly"
       | "sensor.all_uppskattad_anvandning_energy_monthly"
-      | "binary_sensor.kok_sensor_occupancy"
       | "binary_sensor.sensor_vardagsrum_occupancy"
       | "binary_sensor.sensor_vardagsrum_battery_low"
       | "binary_sensor.kontor_occupancy"
@@ -7909,10 +7841,96 @@ declare module "@hakit/core" {
       | "update.sanglampa_hoger"
       | "update.matskal"
       | "update.skotbord"
-      | "binary_sensor.marshmallow3690"
-      | "binary_sensor.skillman1328"
-      | "binary_sensor.cavatorsk"
       | "binary_sensor.underseaegg3955"
+      | "binary_sensor.cavatorsk"
+      | "binary_sensor.skillman1328"
+      | "binary_sensor.marshmallow3690"
+      | "automation.vardagsrum_minska_ljus_vid_tv"
+      | "automation.pausa_musik_cast"
+      | "automation.godnatt"
+      | "automation.kom_hem"
+      | "automation.lamna_hem"
+      | "automation.hem_satt_volym_kl_21"
+      | "automation.hem_satt_volym_kl_7"
+      | "automation.hem_spela_musik_kl_9"
+      | "automation.hem_spela_musik_06_40"
+      | "automation.vardagsrum_xbox_pa"
+      | "automation.sovrum_i_sangen"
+      | "automation.sovrum_plattang_av"
+      | "automation.sovrum_i_sangen_av"
+      | "automation.hem_hogtalare_spela_mys"
+      | "automation.ny_automation_2"
+      | "automation.mobil_idle_volym"
+      | "automation.sovrum_godnatt_timer_klar"
+      | "automation.sovrum_natt_musik_stopp"
+      | "automation.hall_timer_av"
+      | "automation.hall_rorelse_pa"
+      | "automation.hall_rorelse_av"
+      | "automation.hem_07_10_slang_soporna"
+      | "automation.vardagsrum_rorelse_pa"
+      | "automation.vardagsrum_timer"
+      | "automation.vardagsrum_timer_av"
+      | "automation.hem_sla_pa_musik_helg_knapp"
+      | "automation.kok_timer_av"
+      | "automation.nha_satt_pa_dummy_light"
+      | "automation.kok_volym_kl_6"
+      | "automation.sovrum_dimmer_2"
+      | "automation.internet_wan_nere"
+      | "automation.brevlada_offline"
+      | "automation.brevlada_online"
+      | "automation.kok_av_kvall"
+      | "automation.kontor_rorelse_pa"
+      | "automation.kontor_rorelse_av"
+      | "automation.ny_automation_5"
+      | "automation.sovrum_rorelse_av"
+      | "automation.sovrum_timer"
+      | "automation.vacuum_paused_return_to_dock"
+      | "automation.vacuum_notify_on_error"
+      | "automation.dammsugare_13_00_nagon_hemma"
+      | "automation.kok_dammsugare_efter_mat"
+      | "automation.dammsugare_18_00"
+      | "automation.dammsugare_notis_dockar"
+      | "automation.vardagar_stang_av_tv"
+      | "automation.dammsugare_sovrum_hastighet"
+      | "automation.dammsugare_hall_hastighet"
+      | "automation.dammsugare_kontor_hastighet"
+      | "automation.dammsugare_vardagsrum_hastighet"
+      | "automation.dammsugare_kok_hastighet"
+      | "automation.semester_av"
+      | "automation.medicin_wilma"
+      | "automation.hem_jarvis_halsa1"
+      | "automation.hem_dammsuga_lamna_hem"
+      | "automation.hem_godmorgon"
+      | "automation.ha_update_hacs_4_hours"
+      | "automation.update_restart"
+      | "automation.hem_wilma_sover_pausa_musik"
+      | "automation.kok_lagar_mat_lampa_pa"
+      | "automation.kok_lagar_mat_av_lampa_av"
+      | "automation.jarvis_stanger_av_tv"
+      | "automation.badrum_lampor_pa"
+      | "automation.badrum_timer_av"
+      | "automation.automation_95"
+      | "automation.garderob_rorelse_av"
+      | "automation.sovrum_soluppgang_gardin_oppna"
+      | "automation.sovrum_solljus_helg_gardin_upp"
+      | "automation.solnedgang_julstjarna"
+      | "automation.varna_dorr"
+      | "automation.vattenskal_pa"
+      | "automation.vattenskal_timer"
+      | "automation.vattenskal_timer_av"
+      | "automation.dammsugare_stadar_larma_hemma"
+      | "automation.dammsugare_klar_larma_borta"
+      | "automation.larm_bertil_hemma_2"
+      | "automation.ha_zigbee_nere_notis"
+      | "automation.adaptive_lightning_sovrum_pa"
+      | "automation.github_backup"
+      | "automation.rack_temperatur_notis"
+      | "automation.notify_time_alerts"
+      | "automation.tv_starta_jellyfin"
+      | "automation.reload_android_tv"
+      | "automation.rorelse_lampa_pa_kok"
+      | "automation.lampa_av_kontor"
+      | "automation.kok_rorelse_av_starta_timer"
       | "button.ignore_all_issues"
       | "button.unignore_all_issues"
       | "button.homeassistant_restart"
@@ -7971,80 +7989,7 @@ declare module "@hakit/core" {
       | "sensor.weather"
       | "sensor.zones"
       | "sensor.udm_unifios"
-      | "media_player.hallen"
       | "sensor.all_standby_power"
-      | "sensor.all_standby_energy"
-      | "calendar.fodelsedagar"
-      | "binary_sensor.telefoner_laddar"
-      | "media_player.hanky_panky_cast"
-      | "button.bertil_reset_sensor_consumable"
-      | "button.bertil_reset_filter_consumable"
-      | "button.bertil_reset_side_brush_consumable"
-      | "button.bertil_reset_main_brush_consumable"
-      | "number.bertil_sound_volume"
-      | "sensor.bertil_last_clean_duration"
-      | "sensor.bertil_last_clean_area"
-      | "sensor.bertil_current_error"
-      | "sensor.bertil_current_clean_duration"
-      | "sensor.bertil_current_clean_area"
-      | "sensor.bertil_current_map_selected"
-      | "sensor.bertil_total_duration"
-      | "sensor.bertil_total_clean_area"
-      | "sensor.bertil_total_clean_count"
-      | "sensor.bertil_total_dust_collection_count"
-      | "sensor.bertil_main_brush_left"
-      | "sensor.bertil_side_brush_left"
-      | "sensor.bertil_filter_left"
-      | "sensor.bertil_sensor_dirty_left"
-      | "sensor.bertil_dock_status"
-      | "sensor.bertil_cleaning_progress"
-      | "switch.bertil_valley_electricity_switch"
-      | "time.bertil_dnd_start"
-      | "time.bertil_dnd_end"
-      | "time.bertil_off_peak_charging_start"
-      | "time.bertil_off_peak_charging_end"
-      | "camera.bertil_map"
-      | "sensor.tv_vardagsrum_device"
-      | "sensor.hanky_panky_cast_device"
-      | "sensor.nest_hub_v2_device"
-      | "sensor.nest_hub_v2_alarms"
-      | "sensor.nest_hub_v2_timers"
-      | "sensor.hallen_device"
-      | "sensor.hallen_alarms"
-      | "sensor.hallen_timers"
-      | "sensor.kok_device"
-      | "sensor.vardagsrum_device"
-      | "sensor.vardagsrum_alarms"
-      | "sensor.vardagsrum_timers"
-      | "switch.nest_hub_v2_do_not_disturb"
-      | "switch.hallen_do_not_disturb"
-      | "switch.vardagsrum_do_not_disturb"
-      | "number.nest_hub_v2_alarm_volume"
-      | "number.hallen_alarm_volume"
-      | "number.vardagsrum_alarm_volume"
-      | "sensor.xbox_vardagsrum_remote_power"
-      | "sensor.xbox_vardagsrum_remote_energy"
-      | "sensor.xbox_vardagsrum_remote_energy_daily"
-      | "sensor.xbox_vardagsrum_remote_energy_weekly"
-      | "sensor.xbox_vardagsrum_remote_energy_monthly"
-      | "sensor.bertil_battery"
-      | "sensor.spotify_home_assistant_song_tempo"
-      | "sensor.fw_gateway_site_gw_status"
-      | "sensor.kok_alarms"
-      | "sensor.kok_timers"
-      | "switch.kok_do_not_disturb"
-      | "number.kok_alarm_volume"
-      | "sensor.fonster_power"
-      | "switch.fonster"
-      | "sensor.lampor_badrum_device_power_2"
-      | "sensor.lampor_badrum_device_energy_2"
-      | "sensor.lampor_badrum_device_energy_2_daily"
-      | "sensor.lampor_badrum_device_energy_2_weekly"
-      | "sensor.lampor_badrum_device_energy_2_monthly"
-      | "sensor.vardagsrum_lampa_device_power_2"
-      | "sensor.vardagsrum_lampa_device_energy_2"
-      | "sensor.vardagsrum_lampa_device_energy_2_daily"
-      | "sensor.vardagsrum_lampa_device_energy_2_weekly"
-      | "sensor.vardagsrum_lampa_device_energy_2_monthly";
+      | "sensor.all_standby_energy";
   }
 }

@@ -10,13 +10,10 @@ import React, {
 import {
   useHass,
   useAreas,
-  useDevice,
-  useEntity,
-  callService,
+  // useDevices & useEntityRegistry are not exported, so we remove them.
   type EntityName,
   type Area,
-  type Device,
-  type Entity,
+  // type Device is not exported.
   type HassEntityWithService,
 } from '@hakit/core';
 
@@ -30,10 +27,10 @@ export type PrioritizedContent = {
 
 interface DashboardContextProps {
   loading: boolean;
-  areas: Record<string, Area>;
-  devices: Record<string, Device>;
-  entities: Record<string, Entity>;
-  entityAreaMap: Record<EntityName, string | null>;
+  areas: Area[]; // from useAreas
+  devices: Record<string, any>; // no device hook; adjust as needed if you have a registry
+  entities: Record<string, HassEntityWithService<any>>;
+  entityAreaMap: Record<string, string | null>; // keyed by entity ID (string)
   activeAreaId: string | null;
   activeAreaName: string | null;
   prioritizedContent: PrioritizedContent[];
@@ -72,16 +69,21 @@ const ACTIVE_AREA_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { useStore } = useHass();
   const allHassEntities = useStore((state) => state.entities);
-  const { data: areasData, isLoading: areasLoading } = useAreas();
-  const { data: devicesData, isLoading: devicesLoading } = useDevice();
-  const { data: entitiesData, isLoading: entitiesLoading } = useEntities();
+  const areas = useAreas();
+  // Since useDevices is not exported, we define devices as an empty object.
+  const devices = {};
 
-  const areas = useMemo(() => areasData ?? {}, [areasData]);
-  const devices = useMemo(() => devicesData ?? {}, [devicesData]);
-  const entities = useMemo(() => entitiesData ?? {}, [entitiesData]);
+  // Create a memoized map from the areas array
+  const areasMap = useMemo(
+    () =>
+      Array.isArray(areas)
+        ? areas.reduce((acc, area) => ({ ...acc, [area.area_id]: area }), {} as Record<string, Area>)
+        : {},
+    [areas]
+  );
 
   const [loading, setLoading] = useState(true);
-  const [entityAreaMap, setEntityAreaMap] = useState<Record<EntityName, string | null>>({});
+  const [entityAreaMap, setEntityAreaMap] = useState<Record<string, string | null>>({});
   const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
   const [activeAreaTimestamp, setActiveAreaTimestamp] = useState<number>(0);
   const [activeAlerts, setActiveAlerts] = useState<EntityName[]>([]);
@@ -90,29 +92,27 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // 1. Initial Data Loading and Mapping
   useEffect(() => {
-    const isLoading = areasLoading || devicesLoading || entitiesLoading;
+    const isLoading = !areas || !allHassEntities;
     setLoading(isLoading);
-    if (!isLoading && areasData && devicesData && entitiesData) {
-      console.log("Registry data loaded:", { areas: areasData, devices: devicesData, entities: entitiesData });
-      const newEntityAreaMap: Record<EntityName, string | null> = {};
+    if (!isLoading) {
+      console.log("Registry data loaded:", { areas, allHassEntities });
+      const newEntityAreaMap: Record<string, string | null> = {};
 
-      Object.values(entities).forEach((entity) => {
+      Object.values(allHassEntities).forEach((entity) => {
         if (!entity || !entity.entity_id) return;
-        
-        // Try to find area through device first
-        if (entity.device_id && devices[entity.device_id]?.area_id) {
-          newEntityAreaMap[entity.entity_id] = devices[entity.device_id].area_id;
-        } else if (entity.area_id) {
-          // Direct area assignment
-          newEntityAreaMap[entity.entity_id] = entity.area_id;
+        // Attempt to read device_id from entity attributes
+        const deviceId = (entity as any).attributes?.device_id;
+        if (deviceId && (devices as any)[deviceId]?.area_id) {
+          newEntityAreaMap[entity.entity_id] = (devices as any)[deviceId].area_id;
+        } else if ((entity as any).attributes?.area_id) {
+          newEntityAreaMap[entity.entity_id] = (entity as any).attributes.area_id;
         } else {
           newEntityAreaMap[entity.entity_id] = null;
         }
       });
-
       setEntityAreaMap(newEntityAreaMap);
     }
-  }, [areasData, devicesData, entitiesData, areasLoading, devicesLoading, entitiesLoading]);
+  }, [areas, allHassEntities]);
 
   // 2. Motion Sensor Monitoring
   useEffect(() => {
@@ -120,10 +120,10 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const handleMotionUpdate = () => {
       const activeMotionSensors = MOTION_SENSOR_ENTITIES
-        .filter(sensorId => allHassEntities[sensorId]?.state === 'on')
-        .map(sensorId => ({
+        .filter((sensorId) => allHassEntities[sensorId]?.state === 'on')
+        .map((sensorId) => ({
           entityId: sensorId,
-          lastChanged: new Date(allHassEntities[sensorId]?.last_changed || 0).getTime()
+          lastChanged: new Date(allHassEntities[sensorId]?.last_changed || 0).getTime(),
         }))
         .sort((a, b) => b.lastChanged - a.lastChanged);
 
@@ -138,16 +138,13 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     handleMotionUpdate();
-    // Set up subscription to motion sensors
-    const unsubscribeFns = MOTION_SENSOR_ENTITIES.map(entityId => 
-      useStore.subscribe(
-        state => state.entities[entityId]?.state,
-        handleMotionUpdate
-      )
+    // Set up subscription to motion sensors: subscribe now takes a single callback.
+    const unsubscribeFns = MOTION_SENSOR_ENTITIES.map(() =>
+      useStore.subscribe(() => handleMotionUpdate())
     );
 
-    return () => unsubscribeFns.forEach(fn => fn());
-  }, [allHassEntities, entityAreaMap]);
+    return () => unsubscribeFns.forEach((fn) => fn());
+  }, [allHassEntities, entityAreaMap, useStore]);
 
   // 3. Area Timeout Management
   useEffect(() => {
@@ -169,70 +166,59 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!allHassEntities) return;
 
     const checkAlerts = () => {
-      const alerts = CRITICAL_ALERT_ENTITIES.filter(entityId => {
+      const alerts = CRITICAL_ALERT_ENTITIES.filter((entityId) => {
         const entity = allHassEntities[entityId];
         if (!entity) return false;
-        
-        // Add custom logic for different entity types
-        switch (entity.entity_id.split('.')[0]) {
-          case 'alarm_control_panel':
-            return entity.state === 'triggered';
-          case 'binary_sensor':
-            return entity.state === 'on';
-          default:
-            return false;
+        const domain = entity.entity_id.split('.')[0];
+        if (domain === 'alarm_control_panel') {
+          return entity.state === 'triggered';
+        } else if (domain === 'binary_sensor') {
+          return entity.state === 'on';
         }
+        return false;
       });
-
       setActiveAlerts(alerts);
     };
 
     checkAlerts();
-    const unsubscribeFns = CRITICAL_ALERT_ENTITIES.map(entityId =>
-      useStore.subscribe(
-        state => state.entities[entityId]?.state,
-        checkAlerts
-      )
+    const unsubscribeFns = CRITICAL_ALERT_ENTITIES.map(() =>
+      useStore.subscribe(() => checkAlerts())
     );
 
-    return () => unsubscribeFns.forEach(fn => fn());
-  }, [allHassEntities]);
+    return () => unsubscribeFns.forEach((fn) => fn());
+  }, [allHassEntities, useStore]);
 
   // 5. Media Player Monitoring
   useEffect(() => {
     if (!allHassEntities) return;
 
     const checkMediaPlayers = () => {
-      const activePlayers = MEDIA_PLAYER_ENTITIES.filter(entityId => {
+      const activePlayers = MEDIA_PLAYER_ENTITIES.filter((entityId) => {
         const entity = allHassEntities[entityId];
         return entity?.state !== 'off' && entity?.state !== 'idle';
       });
-
       setActiveMediaPlayers(activePlayers);
     };
 
     checkMediaPlayers();
-    const unsubscribeFns = MEDIA_PLAYER_ENTITIES.map(entityId =>
-      useStore.subscribe(
-        state => state.entities[entityId]?.state,
-        checkMediaPlayers
-      )
+    const unsubscribeFns = MEDIA_PLAYER_ENTITIES.map(() =>
+      useStore.subscribe(() => checkMediaPlayers())
     );
 
-    return () => unsubscribeFns.forEach(fn => fn());
-  }, [allHassEntities]);
+    return () => unsubscribeFns.forEach((fn) => fn());
+  }, [allHassEntities, useStore]);
 
   // 6. Content Prioritization
   useEffect(() => {
     const newContent: PrioritizedContent[] = [];
 
     // Priority 1: Critical Alerts
-    activeAlerts.forEach(alertId => {
+    activeAlerts.forEach((alertId) => {
       newContent.push({
         id: `alert-${alertId}`,
         priority: 'critical',
         type: 'alert',
-        data: { entityId: alertId }
+        data: { alertId },
       });
     });
 
@@ -242,17 +228,17 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         id: `room-${activeAreaId}`,
         priority: 'high',
         type: 'room',
-        data: { areaId: activeAreaId }
+        data: { areaId: activeAreaId },
       });
     }
 
     // Priority 3: Active Media Players
-    activeMediaPlayers.forEach(playerId => {
+    activeMediaPlayers.forEach((playerId) => {
       newContent.push({
         id: `media-${playerId}`,
         priority: 'medium',
         type: 'media',
-        data: { entityId: playerId }
+        data: { playerId },
       });
     });
 
@@ -262,31 +248,33 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
         id: 'overview',
         priority: 'low',
         type: 'overview',
-        data: null
+        data: null,
       });
     }
-
     setPrioritizedContent(newContent);
   }, [activeAlerts, activeAreaId, activeMediaPlayers]);
 
-  const getEntitiesInArea = useCallback((areaId: string) => {
-    if (!allHassEntities || !entityAreaMap) return [];
+  const getEntitiesInArea = useCallback(
+    (areaId: string) => {
+      if (!allHassEntities || !entityAreaMap) return [];
+      return Object.entries(entityAreaMap)
+        .filter(([_, mappedAreaId]) => mappedAreaId === areaId)
+        .map(([entityId]) => allHassEntities[entityId])
+        .filter((entity): entity is HassEntityWithService<any> => entity !== undefined);
+    },
+    [allHassEntities, entityAreaMap]
+  );
 
-    return Object.entries(entityAreaMap)
-      .filter(([_, entityAreaId]) => entityAreaId === areaId)
-      .map(([entityId]) => allHassEntities[entityId])
-      .filter((entity): entity is HassEntityWithService<any> => entity !== undefined);
-  }, [allHassEntities, entityAreaMap]);
-
-  const activeAreaName = useMemo(() => 
-    activeAreaId ? areas[activeAreaId]?.name || null : null
-  , [activeAreaId, areas]);
+  const activeAreaName = useMemo(
+    () => (activeAreaId ? areasMap[activeAreaId]?.name || null : null),
+    [activeAreaId, areasMap]
+  );
 
   const value = {
     loading,
     areas,
     devices,
-    entities,
+    entities: allHassEntities,
     entityAreaMap,
     activeAreaId,
     activeAreaName,

@@ -20,7 +20,7 @@ const entityTypeConfigs: Record<string, { icon: string; color?: string }> = {
 
 const RoomContextCard = ({ areaId }: RoomContextCardProps) => {
   const { getEntitiesInArea, areas } = useDashboard();
-  const area = areas[areaId];
+  const area = areas.find(area => area.area_id === areaId);
   const entitiesInArea = React.useMemo(() => getEntitiesInArea(areaId), [areaId, getEntitiesInArea]);
 
   if (!area) {

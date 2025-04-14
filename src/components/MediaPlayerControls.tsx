@@ -11,7 +11,8 @@ const MediaPlayerControls = ({ entityId }: MediaPlayerControlsProps) => {
   const entity = useEntity(entityId);
   const { entityAreaMap, areas } = useDashboard();
   const areaId = entityAreaMap[entityId];
-  const areaName = areaId && areas[areaId] ? areas[areaId].name : 'Unknown Location';
+  const area = areaId ? areas.find(area => area.area_id === areaId) : null;
+  const areaName = area ? area.name : 'Unknown Location';
 
   if (!entity || !entity.attributes) {
     return null;
