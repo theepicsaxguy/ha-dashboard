@@ -214,6 +214,11 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     // Priority 1: Critical Alerts
     activeAlerts.forEach((alertId) => {
+      // Skip empty alert IDs to prevent empty keys
+      if (!alertId || alertId.trim() === "") {
+        console.warn("Found empty alertId, skipping");
+        return;
+      }
       newContent.push({
         id: `alert-${alertId}`,
         priority: 'critical',
@@ -223,7 +228,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
 
     // Priority 2: Active Room
-    if (activeAreaId) {
+    if (activeAreaId && activeAreaId.trim() !== "") {
       newContent.push({
         id: `room-${activeAreaId}`,
         priority: 'high',
@@ -234,6 +239,11 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     // Priority 3: Active Media Players
     activeMediaPlayers.forEach((playerId) => {
+      // Skip empty player IDs to prevent empty keys
+      if (!playerId || playerId.trim() === "") {
+        console.warn("Found empty playerId, skipping");
+        return;
+      }
       newContent.push({
         id: `media-${playerId}`,
         priority: 'medium',
@@ -243,7 +253,7 @@ export const DashboardProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
 
     // Priority 4: Overview (if no active room)
-    if (!activeAreaId) {
+    if (!activeAreaId || activeAreaId.trim() === "") {
       newContent.push({
         id: 'overview',
         priority: 'low',
