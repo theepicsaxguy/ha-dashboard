@@ -1,92 +1,135 @@
 import React from 'react';
-import { ButtonCard, fallback, CardBase } from '@hakit/components';
-import { useEntity, CallServiceArgs, EntityName, HassEntityWithService } from '@hakit/core';
-import { useDashboard } from '../context/DashboardContext';
+import { ButtonCard, CardBase } from '@hakit/components';
+import { useEntity, useService, EntityName, HassEntityWithService } from '@hakit/core';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AlertBannerProps {
   entityId: EntityName;
 }
 
 const getAlertMessage = (entity: HassEntityWithService<any>): string => {
-    if (!entity || !entity.attributes) return `Unknown Alert (${entity?.entity_id || 'N/A'})`;
-    const name = entity.attributes.friendly_name || entity.entity_id;
-    const domain = entity.entity_id.split('.')[0]; // Derive domain from entity_id
+  if (!entity || !entity.attributes) return `Unknown Alert (${entity?.entity_id || 'N/A'})`;
+  const name = entity.attributes.friendly_name || entity.entity_id;
+  const domain = entity.entity_id.split('.')[0];
 
-    switch (domain) {
-        case 'binary_sensor':
-            switch (entity.attributes.device_class) {
-                case 'door':
-                case 'window':
-                    return `${name} is Open!`;
-                case 'leak':
-                    return `Leak Detected at ${name}!`;
-                case 'smoke':
-                case 'gas':
-                    return `Smoke/Gas Detected at ${name}!`;
-                case 'safety':
-                case 'problem':
-                     return `Problem Detected: ${name}`;
-                default:
-                    return `${name} Alert Active (${entity.state})`; // Include state for context
-            }
-        case 'alarm_control_panel':
-            switch(entity.state) {
-                case 'triggered': return `ALARM TRIGGERED! (${name})`;
-                case 'arming': return `Alarm Arming (${name})...`;
-                case 'pending': return `Alarm Pending (${name})...`;
-                default: return `Alarm Status: ${entity.state} (${name})`;
-            }
+  switch (domain) {
+    case 'binary_sensor':
+      switch (entity.attributes.device_class) {
+        case 'door':
+        case 'window':
+          return `${name} is Open!`;
+        case 'leak':
+          return `Leak Detected at ${name}!`;
+        case 'smoke':
+        case 'gas':
+          return `Smoke/Gas Detected at ${name}!`;
+        case 'safety':
+        case 'problem':
+          return `Problem Detected: ${name}`;
         default:
-            return `Alert: ${name} - ${entity.state}`;
-    }
+          return `${name} Alert Active (${entity.state})`;
+      }
+    case 'alarm_control_panel':
+      switch (entity.state) {
+        case 'triggered': return `ALARM TRIGGERED! (${name})`;
+        case 'arming': return `Alarm Arming (${name})...`;
+        case 'pending': return `Alarm Pending (${name})...`;
+        default: return `Alarm Status: ${entity.state} (${name})`;
+      }
+    default:
+      return `Alert: ${name} - ${entity.state}`;
+  }
 };
 
-// Explicitly type the component as React.FC
 const AlertBanner: React.FC<AlertBannerProps> = ({ entityId }) => {
-    const entity = useEntity(entityId);
-    // Removed unused getEntitiesInArea
+  const entity = useEntity(entityId);
+  const alarmService = useService('alarm_control_panel');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-    if (!entity) {
-       console.warn(`Alert entity ${entityId} not found.`);
-       return null; // Return null instead of fallback()
+  if (!entity) {
+    console.warn(`Alert entity ${entityId} not found.`);
+    return null;
+  }
+
+  const handleDismiss = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const domain = entityId.split('.')[0];
+      switch (domain) {
+        case 'alarm_control_panel':
+          await alarmService.alarmDisarm({ target: { entity_id: entityId } });
+          break;
+        // Add other domain-specific handlers here
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to dismiss alert');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const message = getAlertMessage(entity);
-    const isAlarmPanel = entity.entity_id.startsWith('alarm_control_panel.');
-
-    // Simple dismiss for alarm panel example (replace with actual logic)
-    const handleDismiss = () => {
-        if (isAlarmPanel) {
-            const code = prompt("Enter alarm code to disarm:");
-            if (code) {
-                callServiceArgs({
-                    domain: 'alarm_control_panel',
-                    service: 'alarm_disarm',
-                    target: { entity_id: entityId },
-                    service_data: { code }
-                }).catch((err: Error) => console.error("Failed to disarm:", err));
-            }
-        } else {
-            console.log(`Dismiss action for ${entityId} - not implemented`);
-        }
-    }
-
-    return (
-        <CardBase className="alert-banner critical" disablePadding> {/* disablePadding if content has its own */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--ha-alert-error-color, #f44336)', color: 'white', borderRadius: 'var(--ha-CardBase-border-radius, 4px)'}}>
-                <span>🚨 {message}</span>
-                {isAlarmPanel && entity.state === 'triggered' && (
-                     <ButtonCard onClick={handleDismiss} icon="mdi:shield-off-outline" title="Disarm">
-                        Disarm
-                     </ButtonCard>
-                )}
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <CardBase
+          style={{
+            background: 'var(--ha-error)',
+            color: 'var(--ha-on-error)',
+            borderRadius: 'var(--ha-card-border-radius)',
+            marginBottom: 'var(--ha-spacing-md)',
+            overflow: 'hidden'
+          }}
+        >
+          <motion.div
+            initial={false}
+            animate={isLoading ? { opacity: 0.7 } : { opacity: 1 }}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: 'var(--ha-spacing-md)',
+              gap: 'var(--ha-spacing-md)'
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>
+                {getAlertMessage(entity)}
+              </h3>
+              {error && (
+                <p style={{ 
+                  margin: '0.5rem 0 0 0',
+                  fontSize: '0.9rem',
+                  opacity: 0.9 
+                }}>
+                  {error}
+                </p>
+              )}
             </div>
+            
+            <ButtonCard
+              title="Dismiss"
+              onClick={handleDismiss}
+              disabled={isLoading}
+              style={{
+                background: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: 'var(--ha-card-border-radius)',
+                padding: 'var(--ha-spacing-sm) var(--ha-spacing-md)',
+                color: 'var(--ha-on-error)',
+                cursor: isLoading ? 'wait' : 'pointer'
+              }}
+            />
+          </motion.div>
         </CardBase>
-    );
+      </motion.div>
+    </AnimatePresence>
+  );
 };
 
 export default AlertBanner;
-
-function callServiceArgs(arg0: { domain: string; service: string; target: { entity_id: EntityName; }; service_data: { code: string; }; }) {
-    throw new Error('Function not implemented.');
-}

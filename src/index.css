@@ -1,80 +1,86 @@
-#root { width: 100%; height: 100%; }
-/* Keep existing styles */
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: var(--ha-background, #fafafa); /* Use HA background variable */
-    color: var(--ha-primary-text-color, #212121); /* Use HA text color variable */
-    min-height: 100vh;
-  }
-  
-  /* Add new styles for the dashboard */
-  .dashboard-container {
-    box-sizing: border-box;
-  }
-  
-  /* Add some visual distinction for priority (optional) */
-  .critical {
-     /* Styles defined inline in AlertBanner for simplicity */
-     border: 2px solid var(--ha-alert-error-color, #f44336);
-  }
-  
-  .high-priority {
-      /* Maybe a subtle border or background? */
-      /* border-left: 4px solid var(--ha-accent-color, #03a9f4); */
-  }
-  
-  .medium-priority {
-     /* opacity: 0.9; */
-  }
-  .low-priority {
-    /* opacity: 0.8; */
-  }
-  
-  /* Ensure Hakit cards look consistent */
-  [class*="Card-"] { /* Target Hakit Card components */
-     background-color: var(--ha-card-background-color, #fff);
-     border-radius: var(--ha-card-border-radius, 12px); /* Use HA's card radius */
-     box-shadow: var(--ha-card-box-shadow, 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)); /* Use HA's card shadow */
-     overflow: hidden; /* Prevent content overflow */
-  }
-  
-  /* Style for Quick Actions Buttons if needed */
-  .quick-actions-panel .ha-button {
-      /* Customize button appearance */
-  }
-  
-  /* Style for Global Info bar content */
-   .global-info-bar > div {
-      align-items: baseline; /* Align text better */
-   }
-   .global-info-bar .ha-weather-card {
-       padding: 0; /* Remove padding if it looks odd inside the flex container */
-       box-shadow: none;
-       background: none;
-   }
-   .global-info-bar .ha-sensor-card {
-      padding: 0;
-      box-shadow: none;
-      background: none;
-      font-size: 1.5rem; /* Make time larger */
-      font-weight: 300;
-      text-align: center;
-   }
-   .global-info-bar .ha-sensor-card:last-of-type { /* Target date */
-      font-size: 0.9rem;
-      font-weight: 400;
-      opacity: 0.8;
-   }
-  
-  /* Center loading spinner */
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80vh;
-  }
+#root {
+   width: 100%;
+   height: 100%;
+ }
+ 
+ body {
+   margin: 0;
+   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   /* For dark mode, override HA background variables */
+   background-color: var(--ha-background, #0B0B0B);
+   color: var(--ha-primary-text-color, #FFFFFF);
+   min-height: 100vh;
+ }
+ 
+ /* Dashboard Container */
+ .dashboard-container {
+   box-sizing: border-box;
+ }
+ 
+ /* Priority visual distinctions */
+ .critical {
+   border: 2px solid var(--ha-alert-error-color, #FF4C4C);
+ }
+ .high-priority {
+   /* Optional: add a subtle highlight */
+ }
+ .medium-priority {
+   /* Optional styling */
+ }
+ .low-priority {
+   /* Optional styling */
+ }
+ 
+ /* Ensure Hakit cards are styled consistently for dark mode */
+ [class*="Card-"],
+ .cardbase,
+ .global-info-bar,
+ .room-context-card {
+   background-color: var(--ha-card-background-color, #1A1A1A);
+   border-radius: var(--ha-card-border-radius, 12px);
+   box-shadow: var(--ha-card-box-shadow, 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12));
+   overflow: hidden;
+ }
+ 
+ /* Quick Actions Button style adjustments */
+ .quick-actions-panel .ha-button {
+   /* Customize button appearance for dark mode if needed */
+ }
+ 
+ /* Global Info Bar styling */
+ .global-info-bar > div {
+   align-items: baseline;
+ }
+ 
+ .global-info-bar .ha-weather-card {
+   padding: 0;
+   box-shadow: none;
+   background: none;
+ }
+ 
+ .global-info-bar .ha-sensor-card {
+   padding: 0;
+   box-shadow: none;
+   background: none;
+   font-size: 1.5rem;
+   font-weight: 300;
+   text-align: center;
+ }
+ 
+ .global-info-bar .ha-sensor-card:last-of-type {
+   font-size: 0.9rem;
+   font-weight: 400;
+   opacity: 0.8;
+ }
+ 
+ /* Center loading spinner */
+ .loading-container {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   height: 80vh;
+ }
+ 

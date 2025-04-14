@@ -1,88 +1,135 @@
-// Remove duplicate React import if present
 import React from 'react';
-// Correct imports
-import { Card, Button, SceneCard } from '@hakit/components';
-// Correct import for callService
-import { EntityName, callService } from '@hakit/core';
+import { CardBase, ButtonCard } from '@hakit/components';
+import { EntityName, useService } from '@hakit/core';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Action {
-    type: 'scene' | 'script' | 'light' | 'switch' | 'button';
-    entityId: EntityName;
-    label?: string;
-    icon?: string;
+  type: 'scene' | 'script' | 'light' | 'switch' | 'button';
+  entityId: EntityName;
+  label?: string;
+  icon?: string;
 }
 
 interface QuickActionsPanelProps {
-    actions: Action[];
+  actions: Action[];
 }
 
 const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ actions }) => {
+  const sceneService = useService('scene');
+  const scriptService = useService('script');
+  const lightService = useService('light');
+  const switchService = useService('switch');
+  const buttonService = useService('button');
+  const [activeAction, setActiveAction] = React.useState<string | null>(null);
 
-    const handleAction = (action: Action) => {
-         const { type, entityId } = action;
-         let serviceDomain: string | null = null;
-         let serviceName: string | null = null;
-         const serviceData = { entity_id: entityId };
+  const handleAction = async (action: Action) => {
+    const { type, entityId } = action;
+    setActiveAction(entityId);
+    try {
+      switch (type) {
+        case 'scene':
+          await sceneService.turnOn({ target: { entity_id: entityId } });
+          break;
+        case 'script':
+          await scriptService.turnOn({ target: { entity_id: entityId } });
+          break;
+        case 'light':
+          await lightService.toggle({ target: { entity_id: entityId } });
+          break;
+        case 'switch':
+          await switchService.toggle({ target: { entity_id: entityId } });
+          break;
+        case 'button':
+          await buttonService.press({ target: { entity_id: entityId } });
+          break;
+        default:
+          console.warn(`Unsupported quick action type: ${type}`);
+      }
+    } catch (err) {
+      console.error(`Failed to call ${type} ${entityId}:`, err);
+    } finally {
+      setActiveAction(null);
+    }
+  };
 
-         switch (type) {
-            case 'scene':
-                serviceDomain = 'scene';
-                serviceName = 'turn_on';
-                break;
-            case 'script':
-                serviceDomain = 'script';
-                serviceName = 'turn_on'; // Default script service
-                break;
-            case 'light':
-            case 'switch':
-                 serviceDomain = type;
-                 serviceName = 'toggle';
-                 break;
-            case 'button':
-                 serviceDomain = 'button';
-                 serviceName = 'press';
-                 break;
-            default:
-                console.warn(`Unsupported quick action type: ${type}`);
-         }
+  if (!actions.length) return null;
 
-         if (serviceDomain && serviceName) {
-             callService(serviceDomain, serviceName, serviceData)
-                 .catch((err: any) => console.error(`Failed to call ${type} ${entityId}:`, err)); // Added type
-         }
-         // Removed special case for script - 'turn_on' should work
-    };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <CardBase
+        style={{
+          background: 'var(--ha-surface)',
+          borderRadius: 'var(--ha-card-border-radius)',
+          padding: 'var(--ha-spacing-md)',
+          marginBottom: 'var(--ha-spacing-md)'
+        }}
+      >
+        <motion.h2
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            margin: '0 0 var(--ha-spacing-md) 0',
+            color: 'var(--ha-on-surface)',
+            fontSize: '1.2rem',
+            fontWeight: 'bold'
+          }}
+        >
+          Quick Actions
+        </motion.h2>
 
-    return (
-        <Card className="quick-actions-panel low-priority" disableMargin disableRipples disableScale>
-             <h3 style={{ padding: '0.5rem 1rem 0 1rem', margin: '0 0 0.5rem 0' }}>Quick Actions</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '0 1rem 1rem 1rem', justifyContent: 'center' }}>
-                {actions.map((action) => {
-                    // Extract name more reliably
-                    const defaultLabel = action.entityId.includes('.') ? action.entityId.split('.')[1].replace(/_/g, ' ') : action.entityId;
-                    const label = action.label || defaultLabel;
-
-                    if (action.type === 'scene') {
-                        // Ensure SceneCard props are correct
-                        return <SceneCard key={action.entityId} entity={action.entityId} hideIcon hideState />;
-                    } else {
-                        return (
-                            <Button
-                                key={action.entityId}
-                                onClick={() => handleAction(action)}
-                                icon={action.icon}
-                                entity={action.entityId}
-                                title={label}
-                                style={{textTransform: 'capitalize'}}
-                            >
-                                {label}
-                            </Button>
-                        );
-                    }
-                })}
-            </div>
-        </Card>
-    );
+        <motion.div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: 'var(--ha-spacing-md)'
+          }}
+        >
+          <AnimatePresence>
+            {actions.map((action) => (
+              <motion.div
+                key={action.entityId}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ButtonCard
+                  entity={action.entityId}
+                  icon={action.icon}
+                  title={action.label || action.entityId.split('.')[1]}
+                  style={{
+                    background: activeAction === action.entityId 
+                      ? 'var(--ha-primary)'
+                      : 'var(--ha-surface-elevated)',
+                    borderRadius: 'var(--ha-card-border-radius)',
+                    padding: 'var(--ha-spacing-md)',
+                    color: activeAction === action.entityId 
+                      ? 'var(--ha-on-primary)'
+                      : 'var(--ha-on-surface)',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 'var(--ha-spacing-sm)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => handleAction(action)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      </CardBase>
+    </motion.div>
+  );
 };
 
-export default QuickActionsPanel; // Ensure this is the only default export
+export default QuickActionsPanel;
