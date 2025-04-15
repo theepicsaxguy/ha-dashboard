@@ -1,22 +1,12 @@
 #root {
-   width: 100%;
-   height: 100%;
- }
+  width: 100%;
+  height: 100%;
+}
  
- body {
-   margin: 0;
-   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-   -webkit-font-smoothing: antialiased;
-   -moz-osx-font-smoothing: grayscale;
-   background-color: var(--ha-background, #0B0B0B);
-   color: var(--ha-primary-text-color, #FFFFFF);
-   min-height: 100vh;
- }
-
-/* Utility for critical priority */
-.critical {
-  border: 2px solid var(--ha-alert-error-color, #FF4C4C);
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* Let HAKit's ThemeProvider handle all theming */
 }
 
-/* Custom styling beyond HAKit components has been removed */
+/* All styling is now handled by HAKit's ThemeProvider */

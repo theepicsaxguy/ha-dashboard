@@ -17,7 +17,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ actions }) => {
   return (
     <CardBase>
       <Group title="Quick Actions">
-        <Row wrap="wrap" gap="md">
+        <Row wrap="wrap" gap="var(--ha-spacing-md)">
           {actions.map((action) => (
             <ButtonCard
               key={action.entityId}

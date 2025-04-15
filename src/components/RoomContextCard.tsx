@@ -24,7 +24,7 @@ const RoomContextCard = ({ areaId }: RoomContextCardProps) => {
             />
           ))}
           {entities.length === 0 && (
-            <p>No controllable devices in this room</p>
+            <CardBase>No controllable devices in this room</CardBase>
           )}
         </Row>
       </Group>

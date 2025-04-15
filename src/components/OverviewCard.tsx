@@ -1,4 +1,4 @@
-import { Row, Group, ButtonCard, Column } from '@hakit/components';
+import { Row, Group, ButtonCard, CardBase } from '@hakit/components';
 import { HassEntityWithService, EntityName, useHass } from '@hakit/core';
 
 const OverviewCard = () => {
@@ -24,11 +24,11 @@ const OverviewCard = () => {
   }
 
   return (
-    <Column>
+    <CardBase>
       <Group title="Home Overview">
         {lightsOn.length > 0 && (
           <Group title="Lights On">
-            <Row gap="var(--ha-spacing-md)">
+            <Row gap="var(--ha-spacing-md)" wrap="wrap">
               {lightsOn.map((light) => (
                 <ButtonCard
                   key={light.entity_id}
@@ -43,7 +43,7 @@ const OverviewCard = () => {
 
         {activePlayers.length > 0 && (
           <Group title="Active Media">
-            <Row gap="var(--ha-spacing-md)">
+            <Row gap="var(--ha-spacing-md)" wrap="wrap">
               {activePlayers.map((player) => (
                 <ButtonCard
                   key={player.entity_id}
@@ -56,7 +56,7 @@ const OverviewCard = () => {
           </Group>
         )}
       </Group>
-    </Column>
+    </CardBase>
   );
 };
 

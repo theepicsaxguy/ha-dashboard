@@ -17,6 +17,8 @@ const AlertBanner = ({ entityId }: AlertBannerProps) => {
       <ButtonCard
         entity={entityId}
         title={entity.attributes?.friendly_name || entityId}
+        icon="mdi:alert"
+        color="var(--warning-color)"
       />
     </CardBase>
   );

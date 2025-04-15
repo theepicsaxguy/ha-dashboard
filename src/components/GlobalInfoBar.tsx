@@ -12,11 +12,7 @@ const GlobalInfoBar = () => {
         gap="md"
         wrap="wrap"
       >
-        <Row gap="md">
-          <TimeCard />
-          {/* Removed showDate prop as it's not supported by TimeCard */}
-          <TimeCard />
-        </Row>
+        <TimeCard />
         <WeatherCard entity={WEATHER_ENTITY} />
       </Row>
     </CardBase>
