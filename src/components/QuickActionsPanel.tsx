@@ -2,7 +2,7 @@ import React from 'react';
 import { CardBase, Row, Group, ButtonCard } from '@hakit/components';
 import { EntityName } from '@hakit/core';
 
-interface Action {
+export interface Action {
   type: 'scene' | 'script' | 'light' | 'switch' | 'button';
   entityId: EntityName;
   label?: string;
@@ -17,7 +17,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ actions }) => {
   return (
     <CardBase>
       <Group title="Quick Actions">
-        <Row wrap="wrap" gap="var(--ha-spacing-md)">
+        <Row wrap="wrap" gap="md">
           {actions.map((action) => (
             <ButtonCard
               key={action.entityId}

@@ -7,12 +7,13 @@ import MediaPlayerControls from './components/MediaPlayerControls';
 import OverviewCard from './components/OverviewCard';
 import QuickActionsPanel from './components/QuickActionsPanel';
 import { EntityName } from '@hakit/core';
+import type { Action } from './components/QuickActionsPanel';
 
 const Dashboard = () => {
   const { prioritizedContent, activeAlerts } = useDashboard();
   
   // Define common quick actions
-  const quickActions = [
+  const quickActions: Action[] = [
     {
       type: 'script',
       entityId: 'script.good_morning' as EntityName,
