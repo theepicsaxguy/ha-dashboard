@@ -1,42 +1,27 @@
 import { HassConnect } from '@hakit/core';
-import { AnimatePresence } from 'framer-motion';
 import Dashboard from './Dashboard';
-import { DashboardProvider } from './context/DashboardContext';
-import './styles/theme.css';
+import { DashboardProvider } from './context/DashboardContext'; // Import the provider
 
 function App() {
+  // Retrieve the Home Assistant URL and token from environment variables
   const hassUrl = import.meta.env.VITE_HA_URL;
   const hassToken = import.meta.env.VITE_HA_TOKEN;
 
   if (!hassUrl || !hassToken) {
+    // Display a message if the environment variables are not set
     return (
-      <div style={{
-        background: 'var(--ha-background)',
-        color: 'var(--ha-on-background)',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--ha-spacing-md)'
-      }}>
-        <div style={{
-          background: 'var(--ha-surface)',
-          padding: 'var(--ha-spacing-lg)',
-          borderRadius: 'var(--ha-card-border-radius)',
-          textAlign: 'center'
-        }}>
-          Home Assistant URL or Token is not set. Please check your .env file.
-        </div>
+      <div>
+        Home Assistant URL or Token is not set. Please check your .env file.
       </div>
     );
   }
 
   return (
+    // Establish connection with Home Assistant using the provided URL and token
     <HassConnect hassUrl={hassUrl} hassToken={hassToken}>
+      {/* Wrap the Dashboard component with the DashboardProvider */}
       <DashboardProvider>
-        <AnimatePresence mode="wait">
-          <Dashboard />
-        </AnimatePresence>
+        <Dashboard />
       </DashboardProvider>
     </HassConnect>
   );

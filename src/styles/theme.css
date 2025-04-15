@@ -1,35 +1,6 @@
-:root {
-  /* Dark theme colors */
-  --ha-background: #121212;
-  --ha-surface: #1e1e1e;
-  --ha-surface-elevated: #242424;
-  --ha-primary: #bb86fc;
-  --ha-secondary: #03dac6;
-  --ha-error: #cf6679;
-  --ha-on-background: rgba(255, 255, 255, 0.87);
-  --ha-on-surface: rgba(255, 255, 255, 0.87);
-  --ha-on-primary: #000000;
-  --ha-on-secondary: #000000;
-  --ha-on-error: #000000;
-
-  /* Component styles */
-  --ha-card-background: var(--ha-surface);
-  --ha-card-border-radius: 12px;
-  --ha-card-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --ha-spacing-xs: 4px;
-  --ha-spacing-sm: 8px;
-  --ha-spacing-md: 16px;
-  --ha-spacing-lg: 24px;
-  --ha-spacing-xl: 32px;
-
-  /* Animation */
-  --ha-transition-duration: 200ms;
-  --ha-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* Theme variables are now handled by HAKit's ThemeProvider */
 
 body {
-  background-color: var(--ha-background);
-  color: var(--ha-on-background);
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
@@ -37,34 +8,4 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Card base styles */
-.ha-card {
-  background: var(--ha-card-background);
-  border-radius: var(--ha-card-border-radius);
-  box-shadow: var(--ha-card-box-shadow);
-  padding: var(--ha-spacing-md);
-  transition: transform var(--ha-transition-duration) var(--ha-transition-timing);
-}
-
-.ha-card:hover {
-  transform: translateY(-2px);
-}
-
-/* Animation classes */
-.fade-enter {
-  opacity: 0;
-}
-
-.fade-enter-active {
-  opacity: 1;
-  transition: opacity var(--ha-transition-duration) var(--ha-transition-timing);
-}
-
-.fade-exit {
-  opacity: 1;
-}
-
-.fade-exit-active {
-  opacity: 0;
-  transition: opacity var(--ha-transition-duration) var(--ha-transition-timing);
-}
+/* Card and animation styles are now handled by HAKit components */

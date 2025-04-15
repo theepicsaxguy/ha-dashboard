@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"chat.edits2.enabled": true,
+		"chat.renderRelatedFiles": true,
+		"chat.tools.autoApprove": true,
+		"inlineChat.enableV2": true,
+		"inlineChat.finishOnType": true,
+		"github.copilot.chat.followUps": "always",
+		"github.copilot.chat.languageContext.fix.typescript.enabled": true,
+		"github.copilot.chat.languageContext.inline.typescript.enabled": true,
+		"github.copilot.chat.languageContext.typescript.enabled": true,
+		"githubPullRequests.experimental.useQuickChat": true,
+		"githubPullRequests.experimental.chat": true,
+		"github.copilot.chat.codeGeneration.useInstructionFiles": true
+	}
+}

@@ -9,78 +9,14 @@
      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
-   /* For dark mode, override HA background variables */
    background-color: var(--ha-background, #0B0B0B);
    color: var(--ha-primary-text-color, #FFFFFF);
    min-height: 100vh;
  }
- 
- /* Dashboard Container */
- .dashboard-container {
-   box-sizing: border-box;
- }
- 
- /* Priority visual distinctions */
- .critical {
-   border: 2px solid var(--ha-alert-error-color, #FF4C4C);
- }
- .high-priority {
-   /* Optional: add a subtle highlight */
- }
- .medium-priority {
-   /* Optional styling */
- }
- .low-priority {
-   /* Optional styling */
- }
- 
- /* Ensure Hakit cards are styled consistently for dark mode */
- [class*="Card-"],
- .cardbase,
- .global-info-bar,
- .room-context-card {
-   background-color: var(--ha-card-background-color, #1A1A1A);
-   border-radius: var(--ha-card-border-radius, 12px);
-   box-shadow: var(--ha-card-box-shadow, 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12));
-   overflow: hidden;
- }
- 
- /* Quick Actions Button style adjustments */
- .quick-actions-panel .ha-button {
-   /* Customize button appearance for dark mode if needed */
- }
- 
- /* Global Info Bar styling */
- .global-info-bar > div {
-   align-items: baseline;
- }
- 
- .global-info-bar .ha-weather-card {
-   padding: 0;
-   box-shadow: none;
-   background: none;
- }
- 
- .global-info-bar .ha-sensor-card {
-   padding: 0;
-   box-shadow: none;
-   background: none;
-   font-size: 1.5rem;
-   font-weight: 300;
-   text-align: center;
- }
- 
- .global-info-bar .ha-sensor-card:last-of-type {
-   font-size: 0.9rem;
-   font-weight: 400;
-   opacity: 0.8;
- }
- 
- /* Center loading spinner */
- .loading-container {
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   height: 80vh;
- }
- 
+
+/* Utility for critical priority */
+.critical {
+  border: 2px solid var(--ha-alert-error-color, #FF4C4C);
+}
+
+/* Custom styling beyond HAKit components has been removed */
