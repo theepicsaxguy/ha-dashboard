@@ -1,5 +1,6 @@
 import { Column, Row } from '@hakit/components';
 import { useDashboard } from './context/DashboardContext';
+import { useHass } from '@hakit/core';
 import GlobalInfoBar from './components/GlobalInfoBar';
 import AlertBanner from './components/AlertBanner';
 import RoomContextCard from './components/RoomContextCard';
@@ -11,22 +12,17 @@ import type { Action } from './components/QuickActionsPanel';
 
 const Dashboard = () => {
   const { prioritizedContent, activeAlerts } = useDashboard();
+  const { useStore } = useHass();
+  const entities = useStore(state => state.entities);
   
-  // Define common quick actions
-  const quickActions: Action[] = [
-    {
+  const quickActions: Action[] = Object.entries(entities)
+    .filter(([entityId]) => entityId.startsWith('script.'))
+    .map(([entityId]) => ({
       type: 'script',
-      entityId: 'script.good_morning' as EntityName,
-      label: 'Good Morning',
-      icon: 'mdi:weather-sunny'
-    },
-    {
-      type: 'script',
-      entityId: 'script.good_night' as EntityName,
-      label: 'Good Night',
-      icon: 'mdi:weather-night'
-    }
-  ];
+      entityId: entityId as EntityName,
+      label: entityId.replace('script.', '').replace(/_/g, ' '),
+      icon: 'mdi:script'
+    }));
 
   return (
     <Column gap="md" style={{ padding: 'var(--ha-spacing-md)', minHeight: '100vh' }}>
