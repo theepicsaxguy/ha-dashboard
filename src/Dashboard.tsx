@@ -1,73 +1,55 @@
-import { Column, Row } from '@hakit/components';
+import { Column } from '@hakit/components';
 import { useDashboard } from './context/DashboardContext';
 import { useHass } from '@hakit/core';
 import GlobalInfoBar from './components/GlobalInfoBar';
-import AlertBanner from './components/AlertBanner';
-import RoomContextCard from './components/RoomContextCard';
-import MediaPlayerControls from './components/MediaPlayerControls';
 import OverviewCard from './components/OverviewCard';
 import QuickActionsPanel from './components/QuickActionsPanel';
 import { EntityName } from '@hakit/core';
 import type { Action } from './components/QuickActionsPanel';
+import DynamicEntityComponent from './components/registry/DynamicEntityComponent'; 
+import { useMemo } from 'react';
+import ComponentRegistryProvider from './components/registry/ComponentRegistry';
 
 const Dashboard = () => {
-  const { prioritizedContent, activeAlerts } = useDashboard();
+  const { prioritizedContent, filteredEntities } = useDashboard();
   const { useStore } = useHass();
   const entities = useStore(state => state.entities);
-  
-  const quickActions: Action[] = Object.entries(entities)
-    .filter(([entityId]) => entityId.startsWith('script.'))
-    .map(([entityId]) => ({
-      type: 'script',
-      entityId: entityId as EntityName,
-      label: entityId.replace('script.', '').replace(/_/g, ' '),
-      icon: 'mdi:script'
-    }));
+
+  const quickActions: Action[] = useMemo(() => {
+    return Object.entries(entities)
+      .filter(([entityId]) => entityId.startsWith('script.'))
+      .map(([entityId]) => ({
+        type: 'script',
+        entityId: entityId as EntityName,
+        label: entityId.replace('script.', '').replace(/_/g, ' '),
+        icon: 'mdi:script'
+      }));
+  }, [entities]);
 
   return (
-    <Column gap="md" style={{ padding: 'var(--ha-spacing-md)', minHeight: '100vh' }}>
-      <GlobalInfoBar />
-      
-      {/* Render alerts */}
-      {activeAlerts.length > 0 && (
-        <Row gap="md" wrap="wrap">
-          {activeAlerts.map(alert => (
-            <AlertBanner key={alert.entity_id} entityId={alert.entity_id as EntityName} />
+    <ComponentRegistryProvider>
+      <Column gap="md" style={{ padding: 'var(--ha-spacing-md)', minHeight: '100vh' }}>
+        <GlobalInfoBar />
+        <OverviewCard />
+        <QuickActionsPanel actions={quickActions} />
+
+        {filteredEntities
+          .filter(meta => !meta.area)
+          .map(meta => (
+            <DynamicEntityComponent key={meta.entity_id} meta={meta} />
           ))}
-        </Row>
-      )}
-      
-      {/* Overview Card with lights and media */}
-      <OverviewCard />
-      
-      {/* Quick Actions */}
-      <QuickActionsPanel actions={quickActions} />
-      
-      {/* Dynamic prioritized content */}
-      <Column gap="md">
-        {prioritizedContent.map(content => {
-          if (content.type === 'media' && content.entityId) {
-            return (
-              <MediaPlayerControls 
-                key={content.id} 
-                entityId={content.entityId as any} 
-              />
-            );
-          }
-          
-          if (content.type === 'room' && content.areaId) {
-            return (
-              <RoomContextCard 
-                key={content.id} 
-                areaId={content.areaId} 
-              />
-            );
-          }
-          
-          return null;
-        })}
+
+        {prioritizedContent.map(area =>
+          area.area ? (
+            <Column key={area.area} gap="sm">
+              {area.entities.map(meta => (
+                <DynamicEntityComponent key={meta.entity_id} meta={meta} />
+              ))}
+            </Column>
+          ) : null
+        )}
       </Column>
-    </Column>
+    </ComponentRegistryProvider>
   );
 };
 
