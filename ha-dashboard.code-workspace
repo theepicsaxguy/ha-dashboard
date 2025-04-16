@@ -16,6 +16,12 @@
 		"github.copilot.chat.languageContext.typescript.enabled": true,
 		"githubPullRequests.experimental.useQuickChat": true,
 		"githubPullRequests.experimental.chat": true,
-		"github.copilot.chat.codeGeneration.useInstructionFiles": true
+		"github.copilot.chat.codeGeneration.useInstructionFiles": true,
+		"github.copilot.nextEditSuggestions.enabled": true,
+		"github.copilot.chat.commitMessageGeneration.instructions": [
+			{
+				"file": ".github/copilot/conventional-commits.md"
+			}
+		]
 	}
 }
