@@ -31,7 +31,7 @@
     "chalk": "^5.4.1",
     "dotenv": "^16.5.0",
     "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-hooks": "^6.0.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "node-scp": "^0.0.23",
