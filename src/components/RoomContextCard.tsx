@@ -16,16 +16,11 @@ const RoomContextCard = ({ areaId }: RoomContextCardProps) => {
   return (
     <CardBase>
       <Group title={area.name}>
-        <Row wrap="wrap" gap="var(--ha-spacing-md)">
-          {entities.map((entity) => (
-            <ButtonCard
-              key={entity.entity_id}
-              entity={entity.entity_id as EntityName}
-            />
+        <Row wrap='wrap' gap='md'>
+          {entities.map(entity => (
+            <ButtonCard key={entity.entity_id} entity={entity.entity_id as EntityName} />
           ))}
-          {entities.length === 0 && (
-            <CardBase>No controllable devices in this room</CardBase>
-          )}
+          {entities.length === 0 && <em>No controllable devices in this room</em>}
         </Row>
       </Group>
     </CardBase>

@@ -11,15 +11,15 @@
     "prettier": "prettier --write .",
     "sync": "npx tsx scripts/sync-types.ts",
     "prebuild": "npm run prettier",
-    "deploy": "npx tsx scripts/deploy.ts"
+    "deploy": "npx tsx scripts/deploy.ts",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@hakit/components": "^5.0.9",
     "@hakit/core": "^5.0.9",
-    "framer-motion": "^12.7.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-error-boundary": "^6.0.0"
+    "react-error-boundary": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
@@ -33,6 +33,8 @@
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-react-dom": "^1.52.2",
+    "eslint-plugin-react-x": "^1.52.2",
     "globals": "^16.0.0",
     "node-scp": "^0.0.25",
     "prettier": "^3.5.3",
