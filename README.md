@@ -2,7 +2,17 @@
 Node version manager - [NVM](https://github.com/nvm-sh/nvm) to easily install and manage node versions
 
 ## Local Development
-Simply, run `nvm use && npm i && npm run dev` and it will start a local server for you to develop on, it will also watch for changes and reload the page for you. 
+Simply, run `nvm use && npm i && npm run dev` and it will start a local server for you to develop on, it will also watch for changes and reload the page for you.
+
+### Required Environment Variables
+Set the following values in your `.env` file before running the dashboard:
+
+```
+VITE_HA_URL=<https://your-homeassistant>
+VITE_HA_TOKEN=<long-lived token>
+```
+
+The token is optional if you only need read-only access.
 
 ## Dependencies
 
@@ -92,3 +102,5 @@ export default tseslint.config({
   },
 })
 ```
+## Contributing
+New cards can be added using the component registry. Wrap your component in `useRegisterComponent` with a unique id, supported types, and a display check. See `ComponentRegistry.tsx` for examples.

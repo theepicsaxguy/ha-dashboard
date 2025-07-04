@@ -4,9 +4,9 @@ import RoomContextCard from './RoomContextCard';
 
 const AreaOverview = () => {
   const { areas } = useDashboard();
-  
+
   return (
-    <Column gap="var(--ha-spacing-md)">
+    <Column gap='md'>
       {areas.map(area => (
         <RoomContextCard key={area.area_id} areaId={area.area_id} />
       ))}

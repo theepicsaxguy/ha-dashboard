@@ -1,4 +1,4 @@
-import { HassConnect} from '@hakit/core';
+import { HassConnect } from '@hakit/core';
 import { CardBase, ThemeProvider } from '@hakit/components';
 import { ErrorBoundary } from 'react-error-boundary';
 import Dashboard from './Dashboard';
@@ -9,13 +9,8 @@ function App() {
   const hassUrl = import.meta.env.VITE_HA_URL;
   const hassToken = import.meta.env.VITE_HA_TOKEN;
 
-  if (!hassUrl || !hassToken) {
-    // Display a message if the environment variables are not set using HAKit component
-    return (
-      <CardBase>
-        Home Assistant URL or Token is not set. Please check your .env file.
-      </CardBase>
-    );
+  if (!hassUrl) {
+    return <CardBase>Home Assistant URL is not set. Please check your .env file.</CardBase>;
   }
 
   return (

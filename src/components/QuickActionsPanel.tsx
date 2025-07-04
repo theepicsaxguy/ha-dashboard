@@ -16,15 +16,10 @@ interface QuickActionsPanelProps {
 const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ actions }) => {
   return (
     <CardBase>
-      <Group title="Quick Actions">
-        <Row wrap="wrap" gap="md">
-          {actions.map((action) => (
-            <ButtonCard
-              key={action.entityId}
-              entity={action.entityId}
-              title={action.label}
-              icon={action.icon}
-            />
+      <Group title='Quick Actions'>
+        <Row wrap='wrap' gap='md'>
+          {actions.map((action, i) => (
+            <ButtonCard key={action.entityId + '-' + i} entity={action.entityId} title={action.label} icon={action.icon} />
           ))}
         </Row>
       </Group>
